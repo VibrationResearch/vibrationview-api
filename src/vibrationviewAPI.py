@@ -613,7 +613,6 @@ class VibrationVIEW:
         """Sine Hold Resonance"""
         return self.vv.SweepResonanceHold()
 
-    # -- Properties for multipliers and settings --
     def DemandMultiplier(self, value=None):
         """Get/Set multiplier for Demand output (dB)"""
         if value is None:
