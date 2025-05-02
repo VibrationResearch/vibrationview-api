@@ -28,11 +28,12 @@ classifiers = [
     "Operating System :: Microsoft :: Windows",
 ]
 dependencies = [
-    "pywin32>=300",
+    "pywin32>=300"
 ]
 
 [project.optional-dependencies]
 dev = [
+    "types-pywin32>=310",  # Type stubs for pywin32
     "pytest>=6.0.0",
     "black>=21.5b2",
     "pylint>=2.8.2",
