@@ -1,7 +1,7 @@
 import win32com.client as win32
 import subprocess
 import os
-import config
+from . import config
 
 def _generate_file_from_vv(filePath: str, outputName: str, operation: str, template_name: str = None) -> str:
     """
