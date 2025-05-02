@@ -1,0 +1,86 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vibrationview-api"
+version = "0.1.0"
+description = "Python API for VibrationVIEW software"
+readme = "README.md"
+requires-python = ">=3.7"
+license = {file = "LICENSE"}
+authors = [
+    {name = "Vibration Research Corporation", email = "support@vibrationresearch.com"}
+]
+keywords = ["vibration", "testing", "VibrationVIEW", "api"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Manufacturing",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Physics",
+    "Operating System :: Microsoft :: Windows",
+]
+dependencies = [
+    "pywin32>=300",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=6.0.0",
+    "black>=21.5b2",
+    "pylint>=2.8.2",
+]
+test = [
+    "pytest>=6.0.0",
+]
+
+[project.urls]
+"Homepage" = "https://www.vibrationresearch.com/"
+"Bug Tracker" = "https://github.com/vibrationresearch/vibrationview-api/issues"
+"Source Code" = "https://github.com/vibrationresearch/vibrationview-api"
+"Documentation" = "https://www.vibrationresearch.com/vibrationview-api/"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "connection: Tests related to VibrationVIEW connection",
+    "window: Tests related to window control functions",
+    "fileop: Tests related to file operations",
+    "channels: Tests related to channel information",
+    "data: Tests related to data acquisition",
+    "control: Tests related to test control functions",
+    "sine: Tests related to sine-specific functions", 
+    "config: Tests related to input configuration",
+    "recording: Tests related to recording functions",
+]
+
+[tool.black]
+line-length = 100
+target-version = ["py37", "py38", "py39", "py310"]
+
+[tool.pylint.messages_control]
+disable = [
+    "missing-module-docstring",
+    "missing-function-docstring",
+    "missing-class-docstring",
+    "too-many-arguments",
+    "too-many-instance-attributes",
+    "too-many-locals",
+    "too-many-statements",
+]
+
+[tool.pylint.format]
+max-line-length = 100
