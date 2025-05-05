@@ -24,7 +24,7 @@ from datetime import datetime
 sys.path.append(os.path.abspath(os.path.dirname(__file__)))
 try:
     # Import main VibrationVIEW API
-    from vibrationviewAPI import VibrationVIEW, vvVector, vvTestType, ExtractComErrorInfo
+    from vibrationviewapi import VibrationVIEW, vvVector, vvTestType, ExtractComErrorInfo
     
 except ImportError:
     print("Error: Could not import VibrationVIEW API. Make sure they are in the same directory or in your Python path.")

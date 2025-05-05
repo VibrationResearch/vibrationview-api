@@ -32,16 +32,16 @@ src_dir = os.path.join(current_dir, '..', 'src')
 sys.path.append(src_dir)
 
 try:
-    # Import main VibrationVIEW API
-    from vibrationviewAPI import VibrationVIEW, vvVector, vvTestType, ExtractComErrorInfo
+    # Import main VibrationVIEW API from the package
+    from vibrationviewapi import VibrationVIEW, ExtractComErrorInfo, vvTestType
 except ImportError:
-    pytest.skip("Could not import VibrationVIEW API. Make sure they are in the same directory or in your Python path.", allow_module_level=True)
+    pytest.skip("Could not import VibrationVIEW API. Make sure it's in your Python path.", allow_module_level=True)
 
 try:
-    # Import main VibrationVIEW API
-    from vibrationviewCommandLine import GenerateTXTFromVV,GenerateUFFFromVV
+    # Import command line API from the package
+    from vibrationviewapi import GenerateTXTFromVV, GenerateUFFFromVV
 except ImportError:
-    pytest.skip("Could not import vibrationviewCommandLine API. Make sure they are in the same directory or in your Python path.", allow_module_level=True)
+    pytest.skip("Could not import VibrationVIEW command line functions. Make sure they're in your Python path.", allow_module_level=True)
 
 class TestFileOperations:
     """Test class for VibrationVIEW file operations functionality"""

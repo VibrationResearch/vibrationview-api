@@ -45,7 +45,7 @@ sys.path.append(src_dir)
 
 try:
     # Import main VibrationVIEW API
-    from vibrationviewAPI import VibrationVIEW, ExtractComErrorInfo
+    from vibrationviewapi import VibrationVIEW, ExtractComErrorInfo
     
 except ImportError:
     pytest.skip("Could not import VibrationVIEW API. Make sure they are in the same directory or in your Python path.", allow_module_level=True)

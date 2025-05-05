@@ -34,7 +34,7 @@ from channelconfigs import get_channel_config
 
 try:
     # Import main VibrationVIEW API
-    from vibrationviewAPI import VibrationVIEW, vvVector, vvTestType, ExtractComErrorInfo
+    from vibrationviewapi import VibrationVIEW, vvVector, vvTestType, ExtractComErrorInfo
 except ImportError:
     pytest.skip("Could not import VibrationVIEW API. Make sure they are in the same directory or in your Python path.", allow_module_level=True)
 
