@@ -32,7 +32,7 @@ sys.path.append(src_dir)
 
 # Import channel configuration utilities
 try:
-    from channelconfigs import get_channel_config
+    from .channelconfigs import get_channel_config
 except ImportError:
     logger.warning("Could not import channelconfigs module. Some tests may fail.")
     

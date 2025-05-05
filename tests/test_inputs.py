@@ -30,7 +30,7 @@ src_dir = os.path.join(current_dir, '..', 'src')
 sys.path.append(src_dir)
 
 # Import channel configuration utilities
-from channelconfigs import get_channel_config
+from .channelconfigs import get_channel_config
 
 try:
     # Import main VibrationVIEW API

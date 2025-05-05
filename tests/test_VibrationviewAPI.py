@@ -23,7 +23,7 @@ import logging
 import pytest
 from datetime import datetime
 
-from channelconfigs import get_channel_config
+from .channelconfigs import get_channel_config
 
 # Configure logger
 logger = logging.getLogger(__name__)
