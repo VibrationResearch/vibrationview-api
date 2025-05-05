@@ -303,7 +303,7 @@ class VibrationVIEW:
                 
                 print(f'Waiting {waitTime} seconds before next attempt...')
                 time.sleep(waitTime)
-                waitTime *= 2  # Double the wait time for the next attempt            self.vv = vv
+                waitTime *= 2  # Double the wait time for the next attempt            
         except Exception as e:
             print(f'Failed to connect to VibrationVIEW: {ExtractComErrorInfo(e)}')
             vv = None
