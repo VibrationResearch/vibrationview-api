@@ -2,7 +2,7 @@ import win32com.client as win32
 import pythoncom
 import enum
 import time
-from ComHelper import ExtractComErrorInfo
+from .comhelper import ExtractComErrorInfo
 from typing import List, Union
 
 # Enum definitions from the IDL file
