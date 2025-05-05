@@ -2,6 +2,7 @@ import win32com.client as win32
 import pythoncom
 import enum
 import time
+import threading
 from .comhelper import ExtractComErrorInfo
 from typing import List, Union
 
@@ -277,15 +278,26 @@ class vvTestType(enum.IntEnum):
 
 
 class VibrationVIEW:
+     # Class variable to track COM initialization status per thread
+    _com_initialized = threading.local()
+    
     def __init__(self):
         """Initialize COM resources and COM objects"""
-        pythoncom.CoInitialize()
+        # Initialize COM only if not already initialized for this thread
+        thread_id = threading.get_ident()
+        if not hasattr(self._com_initialized, 'threads') or thread_id not in self._com_initialized.threads:
+            pythoncom.CoInitialize()
+            if not hasattr(self._com_initialized, 'threads'):
+                self._com_initialized.threads = set()
+            self._com_initialized.threads.add(thread_id)
+            self._initialized_com = True
+        else:
+            self._initialized_com = False
         try:
             # Use the ProgID that works in your environment
             vv = win32.gencache.EnsureDispatch('VibrationVIEW.TestControl')
             print('VibrationVIEW object created')
-
-            
+  
             retryAttempts = 5
             waitTime = 0.5  # Start with 0.5 seconds
             
@@ -316,8 +328,14 @@ class VibrationVIEW:
             # Release COM object references
             if hasattr(self, 'vv') and self.vv is not None:
                 self.vv = None
-            # Uninitialize COM
-            pythoncom.CoUninitialize()
+
+            # Only uninitialize COM if we initialized it
+            thread_id = threading.get_ident()
+            if hasattr(self, '_initialized_com') and self._initialized_com:
+                if hasattr(self._com_initialized, 'threads') and thread_id in self._com_initialized.threads:
+                    self._com_initialized.threads.remove(thread_id)
+                    pythoncom.CoUninitialize()
+                    self._initialized_com = False
         except:
             pass
 
