@@ -7,3 +7,4 @@
 /.coverage
 /vibrationview_api.egg-info/
 /build/
+/dist/
