@@ -367,13 +367,3 @@ This project is licensed under the MIT License with VibrationVIEW Attribution - 
 
 - VibrationVIEW is a registered trademark of Vibration Research Corporation.
 - This API is developed and maintained by Vibration Research Corporation.
-
-
-## License
-
-This project is licensed under the MIT License with VibrationVIEW Attribution - see the LICENSE file for details.
-
-## Acknowledgements
-
-- VibrationVIEW is a registered trademark of Vibration Research Corporation.
-- This API is developed and maintained by Vibration Research Corporation.
