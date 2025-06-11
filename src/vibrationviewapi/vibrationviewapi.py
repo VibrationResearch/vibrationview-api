@@ -1,4 +1,5 @@
-import win32com.client as win32
+#import win32com.client as win32
+import win32com.client
 import pythoncom
 import enum
 import time
@@ -295,7 +296,8 @@ class VibrationVIEW:
             self._initialized_com = False
         try:
             # Use the ProgID that works in your environment
-            vv = win32.gencache.EnsureDispatch('VibrationVIEW.TestControl')
+            # vv = win32.gencache.EnsureDispatch('VibrationVIEW.TestControl')
+            vv = win32com.client.Dispatch('VibrationVIEW.TestControl')
             print('VibrationVIEW object created')
   
             retryAttempts = 5
