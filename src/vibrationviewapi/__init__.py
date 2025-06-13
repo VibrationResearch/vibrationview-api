@@ -1,11 +1,36 @@
 """
-VibrationVIEW API: Python interface for VibrationVIEW vibration testing software.
+VibrationVIEW Python API
 
-This package provides an interface to VibrationVIEW software through COM automation,
-allowing for programmatic control of vibration tests and data acquisition.
+A thread-safe Python interface to VibrationVIEW software through COM automation,
+suitable for multi-threaded applications like Flask.
+xample usage:
+    Basic usage:
+        from vibrationviewapi import VibrationVIEW
+        
+        vv = VibrationVIEW()
+        version = vv.GetSoftwareVersion()
+        vv.close()
+    
+    Context manager (recommended):
+        from vibrationviewapi import VibrationVIEWContext
+        
+        with VibrationVIEWContext() as vv:
+            version = vv.GetSoftwareVersion()
+            channels = vv.GetHardwareInputChannels()
+    
+    Flask application:
+        from vibrationviewapi import VibrationVIEWContext
+        from flask import Flask, jsonify
+        
+        app = Flask(__name__)
+        
+        @app.route('/status')
+        def status():
+            with VibrationVIEWContext() as vv:
+                return jsonify({'version': vv.GetSoftwareVersion()})
 """
 
-__version__ = "0.1.0"
+__version__ = "0.1.4"
 __author__ = "Dan VanBaren"
 __email__ = "support@vibrationresearch.com"
 
@@ -16,14 +41,22 @@ from .vibrationviewcommandline import (
     GenerateTXTFromVV,
     GenerateUFFFromVV
 )
+# Import enums
+from .vv_enums import vvVector, vvTestType
+
+# Import helper functions
 from .comhelper import ExtractComErrorInfo
 
-# Define what should be available when using "from vibrationviewapi import *"
+__version__ = "0.1.4"
 __all__ = [
-    'VibrationVIEW',
-    'vvVector',
-    'vvTestType',
-    'ExtractComErrorInfo',
+    "VibrationVIEW",
+    "VibrationVIEWContext", 
+    "VibrationVIEWPool",
+    "get_vibrationview",
+    "return_vibrationview",
+    "vvVector",
+    "vvTestType",
+    "ExtractComErrorInfo",
     'GenerateReportFromVV',
     'GenerateTXTFromVV',
     'GenerateUFFFromVV'
