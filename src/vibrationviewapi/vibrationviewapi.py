@@ -1,285 +1,22 @@
-#import win32com.client as win32
+"""
+VibrationVIEW Python API
+
+This module provides a Python interface to VibrationVIEW software through COM automation.
+"""
+
 import win32com.client
 import pythoncom
-import enum
 import time
 import threading
 from .comhelper import ExtractComErrorInfo
+from .vv_enums import vvVector, vvTestType
 from typing import List, Union
-
-# Enum definitions from the IDL file
-class vvVector(enum.IntEnum):
-    """VibrationVIEW vector enumeration for data access"""
-    WAVEFORMAXIS = 0
-    WAVEFORM1 = 1
-    WAVEFORM2 = 2
-    WAVEFORM3 = 3
-    WAVEFORM4 = 4
-    WAVEFORM5 = 5
-    WAVEFORM6 = 6
-    WAVEFORM7 = 7
-    WAVEFORM8 = 8
-    WAVEFORM9 = 9
-    WAVEFORM10 = 10
-    WAVEFORM11 = 11
-    WAVEFORM12 = 12
-    WAVEFORM13 = 13
-    WAVEFORM14 = 14
-    WAVEFORM15 = 15
-    WAVEFORM16 = 16
-    WAVEFORM17 = 17
-    WAVEFORM18 = 18
-    WAVEFORM19 = 19
-    WAVEFORM20 = 20
-    WAVEFORM21 = 21
-    WAVEFORM22 = 22
-    WAVEFORM23 = 23
-    WAVEFORM24 = 24
-    WAVEFORM25 = 25
-    WAVEFORM26 = 26
-    WAVEFORM27 = 27
-    WAVEFORM28 = 28
-    WAVEFORM29 = 29
-    WAVEFORM30 = 30
-    WAVEFORM31 = 31
-    WAVEFORM32 = 32
-    WAVEFORM33 = 33
-    WAVEFORM34 = 34
-    WAVEFORM35 = 35
-    WAVEFORM36 = 36
-    WAVEFORM37 = 37
-    WAVEFORM38 = 38
-    WAVEFORM39 = 39
-    WAVEFORM40 = 40
-    WAVEFORM41 = 41
-    WAVEFORM42 = 42
-    WAVEFORM43 = 43
-    WAVEFORM44 = 44
-    WAVEFORM45 = 45
-    WAVEFORM46 = 46
-    WAVEFORM47 = 47
-    WAVEFORM48 = 48
-    WAVEFORM49 = 49
-    WAVEFORM50 = 50
-    WAVEFORM51 = 51
-    WAVEFORM52 = 52
-    WAVEFORM53 = 53
-    WAVEFORM54 = 54
-    WAVEFORM55 = 55
-    WAVEFORM56 = 56
-    WAVEFORM57 = 57
-    WAVEFORM58 = 58
-    WAVEFORM59 = 59
-    WAVEFORM60 = 60
-    WAVEFORM61 = 61
-    WAVEFORM62 = 62
-    WAVEFORM63 = 63
-    WAVEFORM64 = 64
-    WAVEFORMDEMAND = 90
-    WAVEFORMCONTROL = 91
-    WAVEFORMDEMAND2 = 92
-    WAVEFORMCONTROL2 = 93
-    WAVEFORMDEMAND3 = 94
-    WAVEFORMCONTROL3 = 95
-    WAVEFORMDEMAND4 = 96
-    WAVEFORMCONTROL4 = 97
-    FREQUENCYAXIS = 100
-    FREQUENCY1 = 101
-    FREQUENCY2 = 102
-    FREQUENCY3 = 103
-    FREQUENCY4 = 104
-    FREQUENCY5 = 105
-    FREQUENCY6 = 106
-    FREQUENCY7 = 107
-    FREQUENCY8 = 108
-    FREQUENCY9 = 109
-    FREQUENCY10 = 110
-    FREQUENCY11 = 111
-    FREQUENCY12 = 112
-    FREQUENCY13 = 113
-    FREQUENCY14 = 114
-    FREQUENCY15 = 115
-    FREQUENCY16 = 116
-    FREQUENCY17 = 117
-    FREQUENCY18 = 118
-    FREQUENCY19 = 119
-    FREQUENCY20 = 120
-    FREQUENCY21 = 121
-    FREQUENCY22 = 122
-    FREQUENCY23 = 123
-    FREQUENCY24 = 124
-    FREQUENCY25 = 125
-    FREQUENCY26 = 126
-    FREQUENCY27 = 127
-    FREQUENCY28 = 128
-    FREQUENCY29 = 129
-    FREQUENCY30 = 130
-    FREQUENCY31 = 131
-    FREQUENCY32 = 132
-    FREQUENCY33 = 133
-    FREQUENCY34 = 134
-    FREQUENCY35 = 135
-    FREQUENCY36 = 136
-    FREQUENCY37 = 137
-    FREQUENCY38 = 138
-    FREQUENCY39 = 139
-    FREQUENCY40 = 140
-    FREQUENCY41 = 141
-    FREQUENCY42 = 142
-    FREQUENCY43 = 143
-    FREQUENCY44 = 144
-    FREQUENCY45 = 145
-    FREQUENCY46 = 146
-    FREQUENCY47 = 147
-    FREQUENCY48 = 148
-    FREQUENCY49 = 149
-    FREQUENCY50 = 150
-    FREQUENCY51 = 151
-    FREQUENCY52 = 152
-    FREQUENCY53 = 153
-    FREQUENCY54 = 154
-    FREQUENCY55 = 155
-    FREQUENCY56 = 156
-    FREQUENCY57 = 157
-    FREQUENCY58 = 158
-    FREQUENCY59 = 159
-    FREQUENCY60 = 160
-    FREQUENCY61 = 161
-    FREQUENCY62 = 162
-    FREQUENCY63 = 163
-    FREQUENCY64 = 164
-    FREQUENCYDRIVE = 180
-    FREQUENCYRESPONSE = 181
-    FREQUENCYDRIVE2 = 182
-    FREQUENCYRESPONSE2 = 183
-    FREQUENCYDRIVE3 = 184
-    FREQUENCYRESPONSE3 = 185
-    FREQUENCYDRIVE4 = 186
-    FREQUENCYRESPONSE4 = 187
-    FREQUENCYDEMAND = 190
-    FREQUENCYCONTROL = 191
-    FREQUENCYDEMAND2 = 192
-    FREQUENCYCONTROL2 = 193
-    FREQUENCYDEMAND3 = 194
-    FREQUENCYCONTROL3 = 195
-    FREQUENCYDEMAND4 = 196
-    FREQUENCYCONTROL4 = 197
-    TIMEHISTORYAXIS = 200
-    TIMEHISTORY1 = 201
-    TIMEHISTORY2 = 202
-    TIMEHISTORY3 = 203
-    TIMEHISTORY4 = 204
-    TIMEHISTORY5 = 205
-    TIMEHISTORY6 = 206
-    TIMEHISTORY7 = 207
-    TIMEHISTORY8 = 208
-    TIMEHISTORY9 = 209
-    TIMEHISTORY10 = 210
-    TIMEHISTORY11 = 211
-    TIMEHISTORY12 = 212
-    TIMEHISTORY13 = 213
-    TIMEHISTORY14 = 214
-    TIMEHISTORY15 = 215
-    TIMEHISTORY16 = 216
-    TIMEHISTORY17 = 217
-    TIMEHISTORY18 = 218
-    TIMEHISTORY19 = 219
-    TIMEHISTORY20 = 220
-    TIMEHISTORY21 = 221
-    TIMEHISTORY22 = 222
-    TIMEHISTORY23 = 223
-    TIMEHISTORY24 = 224
-    TIMEHISTORY25 = 225
-    TIMEHISTORY26 = 226
-    TIMEHISTORY27 = 227
-    TIMEHISTORY28 = 228
-    TIMEHISTORY29 = 229
-    TIMEHISTORY30 = 230
-    TIMEHISTORY31 = 231
-    TIMEHISTORY32 = 232
-    TIMEHISTORY33 = 233
-    TIMEHISTORY34 = 234
-    TIMEHISTORY35 = 235
-    TIMEHISTORY36 = 236
-    TIMEHISTORY37 = 237
-    TIMEHISTORY38 = 238
-    TIMEHISTORY39 = 239
-    TIMEHISTORY40 = 240
-    TIMEHISTORY41 = 241
-    TIMEHISTORY42 = 242
-    TIMEHISTORY43 = 243
-    TIMEHISTORY44 = 244
-    TIMEHISTORY45 = 245
-    TIMEHISTORY46 = 246
-    TIMEHISTORY47 = 247
-    TIMEHISTORY48 = 248
-    TIMEHISTORY49 = 249
-    TIMEHISTORY50 = 250
-    TIMEHISTORY51 = 251
-    TIMEHISTORY52 = 252
-    TIMEHISTORY53 = 253
-    TIMEHISTORY54 = 254
-    TIMEHISTORY55 = 255
-    TIMEHISTORY56 = 256
-    TIMEHISTORY57 = 257
-    TIMEHISTORY58 = 258
-    TIMEHISTORY59 = 259
-    TIMEHISTORY60 = 260
-    TIMEHISTORY61 = 261
-    TIMEHISTORY62 = 262
-    TIMEHISTORY63 = 263
-    TIMEHISTORY64 = 264
-    REARINPUTHISTORY1 = 301
-    REARINPUTHISTORY2 = 302
-    REARINPUTHISTORY3 = 303
-    REARINPUTHISTORY4 = 304
-    REARINPUTHISTORY5 = 305
-    REARINPUTHISTORY6 = 306
-    REARINPUTHISTORY7 = 307
-    REARINPUTHISTORY8 = 308
-    REARINPUTHISTORY9 = 309
-    REARINPUTHISTORY10 = 310
-    REARINPUTHISTORY11 = 311
-    REARINPUTHISTORY12 = 312
-    REARINPUTHISTORY13 = 313
-    REARINPUTHISTORY14 = 314
-    REARINPUTHISTORY15 = 315
-    REARINPUTHISTORY16 = 316
-    REARINPUTHISTORY17 = 317
-    REARINPUTHISTORY18 = 318
-    REARINPUTHISTORY19 = 319
-    REARINPUTHISTORY20 = 320
-    REARINPUTHISTORY21 = 321
-    REARINPUTHISTORY22 = 322
-    REARINPUTHISTORY23 = 323
-    REARINPUTHISTORY24 = 324
-    REARINPUTHISTORY25 = 325
-    REARINPUTHISTORY26 = 326
-    REARINPUTHISTORY27 = 327
-    REARINPUTHISTORY28 = 328
-    REARINPUTHISTORY29 = 329
-    REARINPUTHISTORY30 = 330
-    REARINPUTHISTORY31 = 331
-    REARINPUTHISTORY32 = 332
-
-class vvTestType(enum.IntEnum):
-    """VibrationVIEW test type enumeration"""
-    TEST_SYSCHECK = 0
-    TEST_SINE = 1
-    TEST_RANDOM = 2
-    TEST_SHOCK = 4
-    TEST_TRANSIENT = 5
-    TEST_REPLAY = 6
-    @classmethod
-    def get_name(cls, value):
-        try:
-            return cls(value).name.replace("TEST_", "").capitalize()
-        except ValueError:
-            return "Unknown"
 
 
 class VibrationVIEW:
-     # Class variable to track COM initialization status per thread
+    """Main class for interfacing with VibrationVIEW software via COM automation"""
+    
+    # Class variable to track COM initialization status per thread
     _com_initialized = threading.local()
     
     def __init__(self):
@@ -346,7 +83,8 @@ class VibrationVIEW:
         if hasattr(self, 'vv') and self.vv is not None:
             self.vv = None
         pythoncom.CoUninitialize()
-        # -- Basic control methods (IVibrationVIEW Interface) --
+
+    # -- Basic control methods (IVibrationVIEW Interface) --
     def RunTest(self, testName):
         """Run VibrationVIEW Test with the given name"""
         return self.vv.RunTest(testName)
@@ -471,7 +209,6 @@ class VibrationVIEW:
         self.vv.Output(arr)
         return arr
 
-
     def Vector(self, vectorEnum: Union[int, vvVector], columns: int = 1) -> List[List[float]]:
         """
         Get raw data vector
@@ -480,7 +217,6 @@ class VibrationVIEW:
             vectorEnum: Either a vvVector enum value or integer corresponding to the vector
                     (e.g., vvVector.FREQUENCY1 or 101)
             columns: The number of columns in the data array. Default is 1.
-            rows: The number of rows in the data array. Default is 1.
 
         Returns:
             List of lists representing the raw data for the requested vector.
@@ -811,9 +547,6 @@ if __name__ == "__main__":
         print("Failed to connect to VibrationVIEW")
         exit(1)
 
-#        win32com.client.makepy.main()
-#        print(os.path.join(os.path.dirname(win32com.__file__), "gen_py"))
-    
     print("Connected to VibrationVIEW")
     
     # Get software version
@@ -846,5 +579,3 @@ if __name__ == "__main__":
     # Get channel data
     channel_data = vv.Channel()
     print(f"Channel data: {channel_data}")
-    
-    
