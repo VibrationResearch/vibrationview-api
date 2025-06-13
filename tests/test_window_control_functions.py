@@ -12,7 +12,7 @@ Prerequisites:
 - psutil library installed (pip install psutil)
 
 Usage:
-    pytest test_window_control.py -v
+    pytest test_window_control_functions.py -v
 """
 
 import os
@@ -21,21 +21,13 @@ import time
 import logging
 import pytest
 
-# Import window process check functions
-from window_process_state import (
-    find_vibrationview_windows,
-    get_window_state,
-    wait_for_window_state,
-    is_window_minimized,
-    is_window_maximized,
-    is_window_normal
-)
 
 # Configure logger
 logger = logging.getLogger(__name__)
 
 # Get the absolute path of the current file's directory
 current_dir = os.path.abspath(os.path.dirname(__file__))
+logger.info(current_dir)
 
 # Construct the path to the sibling 'src' directory
 src_dir = os.path.join(current_dir, '..', 'src')
@@ -48,7 +40,24 @@ try:
     from vibrationviewapi import VibrationVIEW, ExtractComErrorInfo
     
 except ImportError:
+    logger.info("Could not importVibrationVIEW API.")
     pytest.skip("Could not import VibrationVIEW API. Make sure they are in the same directory or in your Python path.", allow_module_level=True)
+
+# Try to import window process utilities
+WINDOW_UTILS_AVAILABLE = False
+try:
+    import window_process_state
+    from window_process_state import (
+        find_vibrationview_windows,
+        get_window_state,
+        is_window_minimized,
+        is_window_maximized,
+    )
+    WINDOW_UTILS_AVAILABLE = True
+    logger.info("Successfully imported window_process_state utilities")
+except ImportError as e:
+    logger.info("Could not import window_process_state.py")
+    pytest.skip("Could not import window_process_state.py. Make sure they are in the same directory or in your Python path.", allow_module_level=True)
 
 class TestVibrationVIEWWindow:
     """Test class for VibrationVIEW Window Control functions"""
