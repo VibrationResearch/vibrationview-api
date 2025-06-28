@@ -28,7 +28,8 @@ pip install vibrationview-api
 ### Requirements
 
 - Windows operating system (compatible with Windows 10 and Windows 11)
-- VibrationVIEW software installed (compatible with version 10.0 and above)
+- VibrationVIEW software installed
+- VibrationVIEW automation option (VR9604) - OR - VibrationVIEW may be run in Simulation mode without any additional hardware or software
 - Python 3.7 or higher
 - pywin32 (automatically installed as a dependency)
 - psutil (automatically installed as a dependency)
