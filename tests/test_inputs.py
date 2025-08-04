@@ -373,6 +373,11 @@ class TestInputConfiguration:
             # Test first channel (most likely to be available)
             channel_index = 0
             
+            # Check if hardware supports capacitor coupling for this channel
+            if not self.vv.HardwareSupportsCapacitorCoupled(channel_index):
+                logger.info(f"Hardware does not support capacitor coupling for channel {channel_index}")
+                pytest.skip(f"Hardware does not support capacitor coupling for channel {channel_index}")
+            
             # Test setting to True and reading back
             self.vv.InputCapacitorCoupled(channel_index, True)
             result_true = self.vv.InputCapacitorCoupled(channel_index)
@@ -404,6 +409,11 @@ class TestInputConfiguration:
             # Test first channel (most likely to be available)
             channel_index = 0
             
+            # Check if hardware supports accelerometer power source for this channel
+            if not self.vv.HardwareSupportsAccelPowerSource(channel_index):
+                logger.info(f"Hardware does not support accelerometer power source for channel {channel_index}")
+                pytest.skip(f"Hardware does not support accelerometer power source for channel {channel_index}")
+            
             # Test setting to True and reading back
             self.vv.InputAccelPowerSource(channel_index, True)
             result_true = self.vv.InputAccelPowerSource(channel_index)
@@ -434,6 +444,11 @@ class TestInputConfiguration:
             
             # Test first channel (most likely to be available)
             channel_index = 0
+            
+            # Check if hardware supports differential for this channel
+            if not self.vv.HardwareSupportsDifferential(channel_index):
+                logger.info(f"Hardware does not support differential for channel {channel_index}")
+                pytest.skip(f"Hardware does not support differential for channel {channel_index}")
             
             # Test setting to True and reading back
             self.vv.InputDifferential(channel_index, True)
