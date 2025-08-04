@@ -35,7 +35,7 @@ __author__ = "Dan VanBaren"
 __email__ = "support@vibrationresearch.com"
 
 # Import main classes and functions to make them available at the package level
-from .vibrationviewapi import VibrationVIEW, vvVector, vvTestType
+from .vibrationviewapi import VibrationVIEW, VibrationVIEWContext, VibrationVIEWPool, get_vibrationview, return_vibrationview
 from .vibrationviewcommandline import (
     GenerateReportFromVV,
     GenerateTXTFromVV,
