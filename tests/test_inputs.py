@@ -361,6 +361,99 @@ class TestInputConfiguration:
             pytest.fail(f"Error in test_input_configuration_different_files: {error_info}")
 
 
+    @pytest.mark.config
+    def test_input_capacitor_coupled_set_read_consistency(self):
+        """Test InputCapacitorCoupled property set/read consistency"""
+        try:
+            # Get number of hardware channels
+            num_channels = self.vv.GetHardwareInputChannels()
+            assert num_channels is not None and num_channels > 0
+            logger.info(f"Testing InputCapacitorCoupled set/read consistency for {num_channels} channels")
+            
+            # Test first channel (most likely to be available)
+            channel_index = 0
+            
+            # Test setting to True and reading back
+            self.vv.InputCapacitorCoupled(channel_index, True)
+            result_true = self.vv.InputCapacitorCoupled(channel_index)
+            assert result_true == True, f"InputCapacitorCoupled set to True but read back as {result_true}"
+            logger.info(f"Channel {channel_index} InputCapacitorCoupled True: PASS")
+            
+            # Test setting to False and reading back
+            self.vv.InputCapacitorCoupled(channel_index, False)
+            result_false = self.vv.InputCapacitorCoupled(channel_index)
+            assert result_false == False, f"InputCapacitorCoupled set to False but read back as {result_false}"
+            logger.info(f"Channel {channel_index} InputCapacitorCoupled False: PASS")
+            
+            logger.info("InputCapacitorCoupled set/read consistency test completed successfully")
+                
+        except Exception as e:
+            error_info = ExtractComErrorInfo(e)
+            logger.error(f"Error in test_input_capacitor_coupled_set_read_consistency: {error_info}")
+            pytest.fail(f"Error in test_input_capacitor_coupled_set_read_consistency: {error_info}")
+
+    @pytest.mark.config
+    def test_input_accel_power_source_set_read_consistency(self):
+        """Test InputAccelPowerSource property set/read consistency"""
+        try:
+            # Get number of hardware channels
+            num_channels = self.vv.GetHardwareInputChannels()
+            assert num_channels is not None and num_channels > 0
+            logger.info(f"Testing InputAccelPowerSource set/read consistency for {num_channels} channels")
+            
+            # Test first channel (most likely to be available)
+            channel_index = 0
+            
+            # Test setting to True and reading back
+            self.vv.InputAccelPowerSource(channel_index, True)
+            result_true = self.vv.InputAccelPowerSource(channel_index)
+            assert result_true == True, f"InputAccelPowerSource set to True but read back as {result_true}"
+            logger.info(f"Channel {channel_index} InputAccelPowerSource True: PASS")
+            
+            # Test setting to False and reading back
+            self.vv.InputAccelPowerSource(channel_index, False)
+            result_false = self.vv.InputAccelPowerSource(channel_index)
+            assert result_false == False, f"InputAccelPowerSource set to False but read back as {result_false}"
+            logger.info(f"Channel {channel_index} InputAccelPowerSource False: PASS")
+            
+            logger.info("InputAccelPowerSource set/read consistency test completed successfully")
+                
+        except Exception as e:
+            error_info = ExtractComErrorInfo(e)
+            logger.error(f"Error in test_input_accel_power_source_set_read_consistency: {error_info}")
+            pytest.fail(f"Error in test_input_accel_power_source_set_read_consistency: {error_info}")
+
+    @pytest.mark.config
+    def test_input_differential_set_read_consistency(self):
+        """Test InputDifferential property set/read consistency"""
+        try:
+            # Get number of hardware channels
+            num_channels = self.vv.GetHardwareInputChannels()
+            assert num_channels is not None and num_channels > 0
+            logger.info(f"Testing InputDifferential set/read consistency for {num_channels} channels")
+            
+            # Test first channel (most likely to be available)
+            channel_index = 0
+            
+            # Test setting to True and reading back
+            self.vv.InputDifferential(channel_index, True)
+            result_true = self.vv.InputDifferential(channel_index)
+            assert result_true == True, f"InputDifferential set to True but read back as {result_true}"
+            logger.info(f"Channel {channel_index} InputDifferential True: PASS")
+            
+            # Test setting to False and reading back
+            self.vv.InputDifferential(channel_index, False)
+            result_false = self.vv.InputDifferential(channel_index)
+            assert result_false == False, f"InputDifferential set to False but read back as {result_false}"
+            logger.info(f"Channel {channel_index} InputDifferential False: PASS")
+            
+            logger.info("InputDifferential set/read consistency test completed successfully")
+                
+        except Exception as e:
+            error_info = ExtractComErrorInfo(e)
+            logger.error(f"Error in test_input_differential_set_read_consistency: {error_info}")
+            pytest.fail(f"Error in test_input_differential_set_read_consistency: {error_info}")
+
     def _apply_final_configuration(self, config_folder):
         """Apply the final configuration file"""
         try:
