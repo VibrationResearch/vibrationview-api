@@ -587,28 +587,36 @@ class VibrationVIEW:
     def InputCapacitorCoupled(self, channel: int, value: Optional[bool] = None) -> bool:
         """Get/Set input capacitor coupled setting for a channel"""
         if value is None:
-            return self.vv.InputCapacitorCoupled(channel)
+            return bool(self.vv.InputCapacitorCoupled(channel))
         else:
-            self.vv.InputCapacitorCoupled(channel, value)
-            return value
+            # Use direct COM property assignment for indexed property
+            # Property ID 50 from COM interface, DISPATCH_PROPERTYPUT
+            self.vv._oleobj_.Invoke(50, 0, pythoncom.DISPATCH_PROPERTYPUT, 0, channel, int(bool(value)))
+            return bool(value)
 
     @com_method
     def InputAccelPowerSource(self, channel: int, value: Optional[bool] = None) -> bool:
         """Get/Set input accelerometer power source setting for a channel"""
         if value is None:
-            return self.vv.InputAccelPowerSource(channel)
+            return bool(self.vv.InputAccelPowerSource(channel))
         else:
-            self.vv.InputAccelPowerSource(channel, value)
-            return value
+            # Use direct COM property assignment for indexed property
+            
+            # Property ID 51 from COM interface, DISPATCH_PROPERTYPUT
+            # For indexed properties with propput, pass arguments in correct order
+            self.vv._oleobj_.Invoke(51, 0, pythoncom.DISPATCH_PROPERTYPUT, 0, channel, int(bool(value)))
+            return bool(value)
 
     @com_method
     def InputDifferential(self, channel: int, value: Optional[bool] = None) -> bool:
         """Get/Set input differential setting for a channel"""
         if value is None:
-            return self.vv.InputDifferential(channel)
+            return bool(self.vv.InputDifferential(channel))
         else:
-            self.vv.InputDifferential(channel, value)
-            return value
+            # Use direct COM property assignment for indexed property
+            # Property ID 52 from COM interface (assuming next ID after 51), DISPATCH_PROPERTYPUT
+            self.vv._oleobj_.Invoke(52, 0, pythoncom.DISPATCH_PROPERTYPUT, 0, channel, int(bool(value)))
+            return bool(value)
 
     @com_method
     def InputSensitivity(self, channel: int) -> float:
