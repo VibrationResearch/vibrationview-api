@@ -211,6 +211,7 @@ class TestVibrationVIEW:
     @pytest.mark.control
     def test_test_control(self):
         """Test test control functions"""
+        self.vv.TestType = vvTestType.TEST_SINE
         # Get current status
         try:
             status = self.vv.Status()
