@@ -199,7 +199,7 @@ class TestControlFunctions:
                 logger.info("Test entered 'running' state")
                 
                 # Get test type to confirm correct test loaded
-                test_type = self.vv.TestType()
+                test_type = self.vv.TestType
                 test_type_name = vvTestType.get_name(test_type) if test_type is not None else "Unknown"
                 logger.info(f"Running test type: {test_type_name}")
             else:

@@ -66,7 +66,7 @@ class TestVibrationVIEWSine:
     def test_load_sine_test(self):
         """Test loading a sine test file"""
         try:
-            test_type = self.vv.TestType()
+            test_type = self.vv.TestType
             if test_type != vvTestType.TEST_SINE:
                 # Try to open a sine test
                 logger.info("Current test is not SINE, trying to find a SINE test")
@@ -75,7 +75,7 @@ class TestVibrationVIEWSine:
                     try:
                         logger.info(f"Opening SINE test: {sine_test}")
                         self.vv.OpenTest(sine_test)
-                        test_type = self.vv.TestType()
+                        test_type = self.vv.TestType
                         if test_type != vvTestType.TEST_SINE:
                             logger.warning("Opened file is not a SINE test")
                             pytest.skip("Could not open a sine test, skipping sine-specific tests")
@@ -91,7 +91,7 @@ class TestVibrationVIEWSine:
                 logger.info("Current test is already SINE, test file loading not needed")
             
             # Verify it's a sine test
-            test_type = self.vv.TestType()
+            test_type = self.vv.TestType
             assert test_type == vvTestType.TEST_SINE
             logger.info("Confirmed current test is a SINE test")
             

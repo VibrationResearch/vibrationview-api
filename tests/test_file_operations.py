@@ -83,7 +83,7 @@ class TestFileOperations:
 
         # Get test type
         try:
-            test_type = self.vv.TestType()
+            test_type = self.vv.TestType
             test_type_name = vvTestType.get_name(test_type) if test_type is not None else "Unknown"
             assert test_type is not None
             logger.info(f"Test type: {test_type_name}")
@@ -197,7 +197,7 @@ class TestFileOperations:
                     self.vv.OpenTest(test_file)
                     
                     # Verify test opened correctly
-                    opened_type = self.vv.TestType()
+                    opened_type = self.vv.TestType
                     opened_type_name = vvTestType.get_name(opened_type) if opened_type is not None else "Unknown"
                     logger.info(f"Opened test type: {opened_type_name}")
                     
