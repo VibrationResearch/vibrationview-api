@@ -16,8 +16,8 @@ current_dir = os.path.abspath(os.path.dirname(__file__))
 # Construct the path to the sibling 'src' directory
 src_dir = os.path.join(current_dir, '..', 'src')
 
-# Add the 'src' directory to sys.path
-sys.path.append(src_dir)
+# Add the 'src' directory to sys.path at the beginning to ensure it takes priority
+sys.path.insert(0, src_dir)
 
 try:
     # Import main VibrationVIEW API
