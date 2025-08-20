@@ -29,6 +29,12 @@ class TestVibrationVIEWReportField:
         self.vv = vv
         self.find_test_file = find_test_file
         
+        # Ensure recorder is stopped prior to each test
+        self.vv.RecordStop()
+        
+        # Ensure any running test is stopped prior to each test
+        self.vv.StopTest()
+        
         # Open a test file to work with
         test_file = self.find_test_file("sine")
         if not test_file:

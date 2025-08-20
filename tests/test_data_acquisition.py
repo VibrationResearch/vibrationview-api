@@ -48,6 +48,12 @@ class TestDataAcquisition:
         self.wait_for_not = wait_for_not
         self.find_test_file = find_test_file
         self.script_dir = script_dir
+        
+        # Ensure recorder is stopped prior to each test
+        self.vv.RecordStop()
+        
+        # Ensure any running test is stopped prior to each test
+        self.vv.StopTest()
     
     @pytest.mark.data
     def test_data_acquisition_basic(self):

@@ -67,6 +67,12 @@ class TestVibrationVIEWWindow:
         """Setup method that runs before each test method"""
         self.vv = vv
         
+        # Ensure recorder is stopped prior to each test
+        self.vv.RecordStop()
+        
+        # Ensure any running test is stopped prior to each test
+        self.vv.StopTest()
+        
         # Find the VibrationVIEW windows
         try:
             windows = find_vibrationview_windows()
