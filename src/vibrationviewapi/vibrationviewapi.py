@@ -523,7 +523,7 @@ class VibrationVIEW:
             return self.vv.TestType
         else:
             self.vv.TestType = int(value)
-            return int(value)
+            return self.vv.TestType
 
     @com_method
     def SystemCheckFrequency(self, value: Optional[float] = None) -> float:
