@@ -240,7 +240,6 @@ class TestVibrationVIEW:
 
         # Test starting and stopping if not already running
         running = self.wait_for_not(self.vv.IsRunning)
-        time.sleep(1)
         if not running:
             try:
                 # Start test
