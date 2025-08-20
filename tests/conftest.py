@@ -27,16 +27,6 @@ except ImportError:
     pytest.skip("Could not import VibrationVIEW API. Make sure they are in the same directory or in your Python path.", allow_module_level=True)
 
 
-# Try to import the VibrationVIEW API
-# Get the absolute path of the current file's directory
-current_dir = os.path.abspath(os.path.dirname(__file__))
-
-# Construct the path to the sibling 'src' directory
-src_dir = os.path.join(current_dir, '..', 'src')
-
-# Add the 'src' directory to sys.path
-sys.path.append(src_dir)
-
 # Private variables for use within conftest.py only
 _test_folder = os.path.join(current_dir,'..', "Profiles")
 _output_dir = os.path.join(current_dir,'..', "output")
