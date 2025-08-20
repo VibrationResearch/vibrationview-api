@@ -101,7 +101,6 @@ class TestControlFunctions:
             stopped = self.wait_for_not(self.vv.IsRunning)
             if not stopped:
                 logger.warning("Test did not stop within timeout period")
-            time.sleep(1)  # Extra wait to ensure complete stop
             
             # Find a test file
             test_file = self.find_test_file("sine")
@@ -177,7 +176,6 @@ class TestControlFunctions:
             stopped = self.wait_for_not(self.vv.IsRunning)
             if not stopped:
                 logger.warning("Test did not stop within timeout period")
-            time.sleep(1)  # Extra wait to ensure complete stop
             
             # Find a test file
             test_file = self.find_test_file("random")  # Try a different test type
@@ -207,10 +205,6 @@ class TestControlFunctions:
             else:
                 logger.warning("Test did not enter 'running' state within timeout")
                 pytest.skip("Test did not enter running state, skipping remaining test")
-            
-            # Let test run for a while
-            logger.info("Test running for 3 seconds")
-            time.sleep(3)
             
             # Stop test
             logger.info("Stopping test")
