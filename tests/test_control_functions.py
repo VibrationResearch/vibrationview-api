@@ -173,8 +173,8 @@ class TestControlFunctions:
             self.vv.StopTest()
             
             # Wait for test to fully stop
-            stopped = self.wait_for_not(self.vv.IsRunning)
-            if not stopped:
+            running = self.wait_for_not(self.vv.IsRunning)
+            if running:
                 logger.warning("Test did not stop within timeout period")
             
             # Find a test file
@@ -212,8 +212,8 @@ class TestControlFunctions:
             
             # Check if stopped
             logger.info("Waiting for test to stop")
-            stopped = self.wait_for_not(self.vv.IsRunning)
-            if stopped:
+            running = self.wait_for_not(self.vv.IsRunning)
+            if not running:
                 logger.info("Test stopped successfully")
             else:
                 logger.warning("Test did not stop within timeout period")
