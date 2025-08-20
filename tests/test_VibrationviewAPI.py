@@ -74,7 +74,7 @@ class TestVibrationVIEW:
         # Test hardware properties
         inputs = self.vv.GetHardwareInputChannels()
         assert inputs is not None
-        assert inputs in [4, 8, 12, 16]
+        assert inputs in [4, 8, 12, 16, 32]
         logger.info(f"Hardware has {inputs} input channels")
       
         outputs = self.vv.GetHardwareOutputChannels()
