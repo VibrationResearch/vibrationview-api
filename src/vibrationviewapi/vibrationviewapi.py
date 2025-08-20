@@ -653,12 +653,6 @@ class VibrationVIEW:
         """Check if hardware supports differential for a channel"""
         return self.vv.HardwareSupportsDifferential(channel)
 
-    # -- V8/V11 Methods --
-    @com_method
-    def GetActiveTest(self) -> Any:
-        """Get the active test object"""
-        return self.vv.ActiveTest
-
     @com_method
     def RecordStart(self) -> bool:
         """Start recording data"""
