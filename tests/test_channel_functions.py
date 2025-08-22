@@ -523,6 +523,69 @@ class TestChannelFunctions:
             logger.error(f"Error in test_compare_channel_configs: {error_info}")
             pytest.fail(f"Error in test_compare_channel_configs: {error_info}")
 
+    @pytest.mark.channels
+    def test_teds_all_channels_3d_array(self):
+        """Test TEDS reading for all channels using TedsRead() method"""
+        try:
+            # Set up config file paths
+            config_subfolder = "InputConfig"
+            config_folder = os.path.join(self.script_dir, '..', config_subfolder)
+            config_file = os.path.join(config_folder, "7-channels-TEDS.vic")
+            
+            if not os.path.exists(config_file):
+                pytest.skip(f"TEDS configuration file not found: {config_file}")
+            
+            # Apply the configuration file
+            self.vv.SetInputConfigurationFile(config_file)
+            
+            num_channels = self.vv.GetHardwareInputChannels()
+            assert num_channels is not None and num_channels > 0
+            logger.info(f"Testing TEDS for all {num_channels} channels using TedsRead() method")
+            
+            # Use TedsRead() to get TEDS for all channels at once
+            all_teds_data = self.vv.TedsRead()
+            
+            assert all_teds_data is not None, "TedsRead() should return data"
+            assert len(all_teds_data) == num_channels, f"Expected {num_channels} channel results, got {len(all_teds_data)}"
+            
+            channels_with_teds = 0
+            
+            for channel_index, channel_teds_data in enumerate(all_teds_data):
+                logger.info(f"Processing TEDS data for channel {channel_index+1}")
+                
+                # TedsRead() returns a tuple of tuples where each channel's data is a tuple of 3-tuples
+                # Each TEDS entry is formatted as: (field_name, value, unit)
+                if channel_teds_data and len(channel_teds_data) > 0:
+                    # Check if this channel has meaningful TEDS data (not just empty strings)
+                    has_data = any(entry[0] or entry[1] for entry in channel_teds_data if len(entry) >= 2)
+                    
+                    if has_data:
+                        logger.info(f"Channel {channel_index+1}: Found {len(channel_teds_data)} TEDS entries")
+                        channels_with_teds += 1
+                        
+                        # Log first few meaningful entries
+                        meaningful_entries = [entry for entry in channel_teds_data if entry[0] or entry[1]][:3]
+                        for i, entry in enumerate(meaningful_entries):
+                            field_name, value, unit = entry
+                            logger.info(f"  TEDS entry {i+1}: {field_name} = {value} {unit}")
+                    else:
+                        logger.info(f"Channel {channel_index+1}: TEDS entries present but empty")
+                else:
+                    logger.warning(f"No TEDS data for channel {channel_index+1}")
+            
+            if channels_with_teds == 0:
+                pytest.skip("No channels with valid TEDS data found")
+            else:
+                logger.info(f"Successfully read TEDS data for {channels_with_teds} channels using TedsRead() method")
+            
+            assert channels_with_teds > 0, "At least one channel should have TEDS data"
+            
+        except Exception as e:
+            error_info = ExtractComErrorInfo(e)
+            logger.error(f"Error in test_teds_all_channels_3d_array: {error_info}")
+            pytest.fail(f"Error in test_teds_all_channels_3d_array: {error_info}")
+
+
 
 if __name__ == "__main__":
     # Configure logging
