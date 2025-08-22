@@ -149,7 +149,7 @@ class TestInputConfiguration:
             # Verify channel configurations with focus on TEDS
             channels_verified = 0
             
-            for channel_index in range(min(num_channels, 16)):
+            for channel_index in range(min(num_channels, 32)):
                 try:
                     logger.info(f"Verifying channel {channel_index+1} TEDS configuration")
                     
