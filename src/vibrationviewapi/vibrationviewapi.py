@@ -432,6 +432,20 @@ class VibrationVIEW:
     def RearInputLabel(self, channel: int) -> str:
         """Get label for the rear input channel"""
         return self.vv.RearInputLabel(channel)
+    
+    @com_method
+    def TedsRead(self) -> List[dict]:
+        """Get TEDs value for all channels channel(s)"""
+        try:
+            if not hasattr(self.vv, 'TedsRead'):
+                print("TedsRead method not available on COM object")
+                return []
+            
+            tedsInfo = self.vv.TedsRead()
+            return tedsInfo
+        except Exception as e:
+            print(f"Error getting TEDS data: {e}")
+            return []
 
     @com_method
     def Teds(self, channel: Optional[int] = None) -> List[dict]:
