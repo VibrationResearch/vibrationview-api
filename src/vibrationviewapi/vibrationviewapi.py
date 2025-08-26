@@ -448,6 +448,31 @@ class VibrationVIEW:
             return []
 
     @com_method
+    def TedsVerifyAndApply(self, tedsvalues: List[dict]) -> List[dict]:
+        """Apply TEDs values for all channels"""
+        try:
+            if not hasattr(self.vv, 'TedsVerifyAndApply'):
+                print("TedsVerifyAndApply method not available on COM object")
+                return []
+            
+            tedsInfo = self.vv.TedsVerifyAndApply(tedsvalues)
+            return tedsInfo
+        except Exception as e:
+            return ExtractComErrorInfo(e)
+    @com_method
+
+    def TedsReadAndApply(self) -> List[dict]:
+        """Apply TEDs values for all channels"""
+        try:
+            if not hasattr(self.vv, 'TedsReadAndApply'):
+                print("TedsReadAndApply method not available on COM object")
+                return []
+            
+            tedsInfo = self.vv.TedsReadAndApply()
+            return tedsInfo
+        except Exception as e:
+            return ExtractComErrorInfo(e)
+    @com_method
     def Teds(self, channel: Optional[int] = None) -> List[dict]:
         """Get TEDs value for requested channel(s)"""
         allTedsData = []
@@ -643,9 +668,23 @@ class VibrationVIEW:
         return self.vv.InputEngineeringScale(channel)
 
     @com_method
+    def EnableTEDS(self, channel: int, value: Optional[bool] = None) -> bool:
+        """Get/Set TEDS enable setting for a channel"""
+        if value is None:
+            return bool(self.vv.EnableTEDS(channel))
+        else:
+            self.vv._oleobj_.Invoke(78, 0, pythoncom.DISPATCH_PROPERTYPUT, 0, channel, int(bool(value)))
+            return bool(value)
+
+    @com_method
     def InputMode(self, channel: int, powerSource: bool, capCoupled: bool, differential: bool) -> bool:
         """Set input mode for a channel"""
         return self.vv.InputMode(channel, powerSource, capCoupled, differential)
+
+    @com_method
+    def InputMode2(self, channel: int, power_source: bool, cap_couple: bool, differential: bool, teds_enable: bool) -> bool:
+        """Set input mode with TEDS enable for a channel"""
+        return self.vv.InputMode2(channel, power_source, cap_couple, differential, teds_enable)
 
     @com_method
     def InputCalibration(self, channel: int, sensitivity: float, serialNumber: str, calDate: str) -> bool:
