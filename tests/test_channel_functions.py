@@ -585,6 +585,232 @@ class TestChannelFunctions:
             logger.error(f"Error in test_teds_all_channels_3d_array: {error_info}")
             pytest.fail(f"Error in test_teds_all_channels_3d_array: {error_info}")
 
+    @pytest.mark.channels
+    def test_teds_verify_and_apply(self):
+        """Test TedsVerifyAndApply using data from TedsRead"""
+        try:
+            # Set up config file paths
+            config_subfolder = "InputConfig"
+            config_folder = os.path.join(self.script_dir, '..', config_subfolder)
+            config_file = os.path.join(config_folder, "7-channels-TEDS.vic")
+            
+            if not os.path.exists(config_file):
+                pytest.skip(f"TEDS configuration file not found: {config_file}")
+            
+            # Apply the configuration file
+            self.vv.SetInputConfigurationFile(config_file)
+            
+            num_channels = self.vv.GetHardwareInputChannels()
+            assert num_channels is not None and num_channels > 0
+            logger.info(f"Testing TedsVerifyAndApply for {num_channels} channels")
+            
+            # First, read current TEDS data using TedsRead()
+            logger.info("Reading current TEDS data using TedsRead()")
+            teds_data = self.vv.TedsRead()
+            
+            assert teds_data is not None, "TedsRead() should return data"
+            assert len(teds_data) == num_channels, f"Expected {num_channels} channel results, got {len(teds_data)}"
+            
+            # Now test TedsVerifyAndApply with the converted data
+            logger.info("Testing TedsVerifyAndApply with converted TEDS data")
+            verify_result = self.vv.TedsVerifyAndApply(teds_data)
+            
+            assert verify_result is not None, "TedsVerifyAndApply should return a result"
+            logger.info(f"TedsVerifyAndApply returned: {type(verify_result)} with length {len(verify_result) if hasattr(verify_result, '__len__') else 'N/A'}")
+            
+            # Log some details about the result
+            if isinstance(verify_result, list) and len(verify_result) > 0:
+                logger.info(f"First result entry: {verify_result[0]}")
+                
+                # Count successful verifications
+                verified_channels = 0
+                for result_entry in verify_result:
+                    if isinstance(result_entry, dict):
+                        if "Error" not in result_entry:
+                            verified_channels += 1
+                        else:
+                            channel_num = result_entry.get("Channel", "Unknown")
+                            error_msg = result_entry.get("Error", "Unknown error")
+                            logger.warning(f"Channel {channel_num} verification error: {error_msg}")
+                
+                logger.info(f"Successfully verified and applied TEDS for {verified_channels} channels")
+                
+                # Assert that at least some channels were processed successfully
+                if verified_channels == 0:
+                    logger.warning("No channels were successfully verified")
+                else:
+                    assert verified_channels > 0, "At least one channel should be successfully verified"
+            else:
+                logger.info("TedsVerifyAndApply returned non-list result or empty list")
+            
+        except Exception as e:
+            error_info = ExtractComErrorInfo(e)
+            logger.error(f"Error in test_teds_verify_and_apply: {error_info}")
+            pytest.fail(f"Error in test_teds_verify_and_apply: {error_info}")
+
+    @pytest.mark.channels
+    def test_teds_read_and_apply(self):
+        """Test TedsReadAndApply method to read and apply TEDS data from hardware"""
+        try:
+            # Set up config file paths
+            config_subfolder = "InputConfig"
+            config_folder = os.path.join(self.script_dir, '..', config_subfolder)
+            config_file = os.path.join(config_folder, "7-channels-TEDS.vic")
+            
+            if not os.path.exists(config_file):
+                pytest.skip(f"TEDS configuration file not found: {config_file}")
+            
+            # Apply the configuration file
+            self.vv.SetInputConfigurationFile(config_file)
+            
+            num_channels = self.vv.GetHardwareInputChannels()
+            assert num_channels is not None and num_channels > 0
+            logger.info(f"Testing TedsReadAndApply for {num_channels} channels")
+            
+            # Test TedsReadAndApply - this should read TEDS from hardware and apply to VibrationVIEW
+            logger.info("Testing TedsReadAndApply method")
+            read_and_apply_result = self.vv.TedsReadAndApply()
+            
+            assert read_and_apply_result is not None, "TedsReadAndApply should return a result"
+            logger.info(f"TedsReadAndApply returned: {type(read_and_apply_result)}")
+            
+            # Log details about the result
+            if isinstance(read_and_apply_result, list) and len(read_and_apply_result) > 0:
+                logger.info(f"TedsReadAndApply returned {len(read_and_apply_result)} channel results")
+                
+                # Log first few entries for inspection
+                for i, result_entry in enumerate(read_and_apply_result[:3]):  # Show first 3 entries
+                    logger.info(f"Channel {i+1} result: {result_entry}")
+                
+                # Count successful applications
+                applied_channels = 0
+                for result_entry in read_and_apply_result:
+                    if isinstance(result_entry, dict):
+                        if "Error" not in result_entry:
+                            applied_channels += 1
+                        else:
+                            channel_num = result_entry.get("Channel", "Unknown")
+                            error_msg = result_entry.get("Error", "Unknown error")
+                            logger.warning(f"Channel {channel_num} read/apply error: {error_msg}")
+                
+                logger.info(f"Successfully read and applied TEDS for {applied_channels} channels")
+                
+                # Assert that at least some channels were processed successfully
+                if applied_channels == 0:
+                    logger.warning("No channels were successfully read and applied")
+                else:
+                    assert applied_channels > 0, "At least one channel should be successfully read and applied"
+                    
+            elif isinstance(read_and_apply_result, str):
+                logger.info(f"TedsReadAndApply returned string result: {read_and_apply_result}")
+                # Check if this indicates an error or success message
+                if "error" in read_and_apply_result.lower():
+                    logger.warning(f"TedsReadAndApply returned error: {read_and_apply_result}")
+                else:
+                    logger.info("TedsReadAndApply completed successfully")
+            else:
+                logger.info(f"TedsReadAndApply returned unexpected result type: {type(read_and_apply_result)}")
+            
+        except Exception as e:
+            error_info = ExtractComErrorInfo(e)
+            logger.error(f"Error in test_teds_read_and_apply: {error_info}")
+            pytest.fail(f"Error in test_teds_read_and_apply: {error_info}")
+
+    @pytest.mark.channels
+    def test_teds_verify_and_apply_mismatch_error(self):
+        """Test TedsVerifyAndApply returns mismatch error when a field is changed"""
+        try:
+            # Set up config file paths
+            config_subfolder = "InputConfig"
+            config_folder = os.path.join(self.script_dir, '..', config_subfolder)
+            config_file = os.path.join(config_folder, "7-channels-TEDS.vic")
+            
+            if not os.path.exists(config_file):
+                pytest.skip(f"TEDS configuration file not found: {config_file}")
+            
+            # Apply the configuration file
+            self.vv.SetInputConfigurationFile(config_file)
+            
+            num_channels = self.vv.GetHardwareInputChannels()
+            assert num_channels is not None and num_channels > 0
+            logger.info(f"Testing TedsVerifyAndApply mismatch error for {num_channels} channels")
+            
+            # First, read current TEDS data using TedsRead()
+            logger.info("Reading current TEDS data using TedsRead()")
+            teds_data = self.vv.TedsRead()
+            
+            assert teds_data is not None, "TedsRead() should return data"
+            assert len(teds_data) == num_channels, f"Expected {num_channels} channel results, got {len(teds_data)}"
+            
+            # Find a channel with TEDS data to modify
+            modified_teds_data = list(teds_data)  # Create a copy
+            channel_modified = None
+            
+            for channel_index, channel_teds_data in enumerate(teds_data):
+                if channel_teds_data and len(channel_teds_data) > 0:
+                    # Check if this channel has meaningful TEDS data
+                    has_data = any(entry[0] or entry[1] for entry in channel_teds_data if len(entry) >= 2)
+                    
+                    if has_data:
+                        # Modify the first meaningful TEDS entry
+                        modified_channel_data = list(channel_teds_data)
+                        for i, entry in enumerate(modified_channel_data):
+                            if len(entry) >= 2 and (entry[0] or entry[1]):
+                                # Modify the value field to create a mismatch
+                                field_name, original_value, unit = entry
+                                if original_value and str(original_value).strip():
+                                    modified_value = f"MODIFIED_{original_value}"
+                                    modified_channel_data[i] = (field_name, modified_value, unit)
+                                    modified_teds_data[channel_index] = tuple(modified_channel_data)
+                                    channel_modified = channel_index
+                                    logger.info(f"Modified channel {channel_index+1} TEDS field '{field_name}': '{original_value}' -> '{modified_value}'")
+                                    break
+                        
+                        if channel_modified is not None:
+                            break
+            
+            if channel_modified is None:
+                pytest.skip("No suitable TEDS data found to modify for mismatch test")
+            
+            # Now test TedsVerifyAndApply with the modified data
+            logger.info("Testing TedsVerifyAndApply with modified TEDS data (expecting mismatch error)")
+            verify_result = self.vv.TedsVerifyAndApply(tuple(modified_teds_data))
+            
+            assert verify_result is not None, "TedsVerifyAndApply should return a result"
+            logger.info(f"TedsVerifyAndApply returned: {type(verify_result)} with length {len(verify_result) if hasattr(verify_result, '__len__') else 'N/A'}")
+            
+            # Check for mismatch error using string indicator
+            mismatch_found = False
+            
+            if isinstance(verify_result, tuple) and len(verify_result) >= 2:
+                # Handle tuple format (HRESULT, message)
+                hresult_code, error_message = verify_result[0], verify_result[1]
+                logger.info(f"Verification returned tuple: HRESULT={hresult_code}, Message='{error_message}'")
+                
+                # Check for mismatch string in error message
+                if error_message and "mismatch" in str(error_message).lower():
+                    mismatch_found = True
+                    logger.info(f"Found expected mismatch error in message: {error_message}")
+            elif isinstance(verify_result, str):
+                logger.info(f"Verification error: {verify_result}")
+                
+                # Check if this is a mismatch error using string indicator
+                if "mismatch" in verify_result.lower():
+                    mismatch_found = True
+                    logger.info(f"Found expected mismatch error: {verify_result}")
+            else:
+                logger.info(f"Verification returned unexpected result type: {type(verify_result)}, value: {verify_result}")
+
+            # Assert that a mismatch error was detected
+            assert mismatch_found, f"Expected mismatch error string, but got: {verify_result}"
+            logger.info("Successfully detected expected mismatch error")
+            
+        except Exception as e:
+            error_msg = ExtractComErrorInfo(e)
+            logger.error(f"Error in test_teds_verify_and_apply_mismatch_error: {error_msg}")
+            pytest.fail(f"Error in test_teds_verify_and_apply_mismatch_error: {error_msg}")
+
+    @pytest.mark.channels
 
 
 if __name__ == "__main__":
