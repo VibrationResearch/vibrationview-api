@@ -435,7 +435,7 @@ class VibrationVIEW:
     
     @com_method
     def TedsRead(self) -> List[dict]:
-        """Get TEDs value for all channels channel(s)"""
+        """Get TEDs values for all channels"""
         try:
             if not hasattr(self.vv, 'TedsRead'):
                 print("TedsRead method not available on COM object")
