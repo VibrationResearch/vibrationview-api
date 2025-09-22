@@ -436,42 +436,19 @@ class VibrationVIEW:
     @com_method
     def TedsRead(self) -> List[dict]:
         """Get TEDs values for all channels"""
-        try:
-            if not hasattr(self.vv, 'TedsRead'):
-                print("TedsRead method not available on COM object")
-                return []
-            
-            tedsInfo = self.vv.TedsRead()
-            return tedsInfo
-        except Exception as e:
-            print(f"Error getting TEDS data: {e}")
-            return []
+        tedsInfo = self.vv.TedsRead
+        return tedsInfo
 
     @com_method
     def TedsVerifyAndApply(self, tedsvalues: List[dict]) -> List[dict]:
         """Apply TEDs values for all channels"""
-        try:
-            if not hasattr(self.vv, 'TedsVerifyAndApply'):
-                print("TedsVerifyAndApply method not available on COM object")
-                return []
-            
-            tedsInfo = self.vv.TedsVerifyAndApply(tedsvalues)
-            return tedsInfo
-        except Exception as e:
-            return ExtractComErrorInfo(e)
+        tedsInfo = self.vv.TedsVerifyAndApply(tedsvalues)
+        return tedsInfo
     @com_method
-
     def TedsReadAndApply(self) -> List[dict]:
         """Apply TEDs values for all channels"""
-        try:
-            if not hasattr(self.vv, 'TedsReadAndApply'):
-                print("TedsReadAndApply method not available on COM object")
-                return []
-            
-            tedsInfo = self.vv.TedsReadAndApply()
-            return tedsInfo
-        except Exception as e:
-            return ExtractComErrorInfo(e)
+        tedsInfo = self.vv.TedsReadAndApply
+        return tedsInfo
     @com_method
     def Teds(self, channel: Optional[int] = None) -> List[dict]:
         """Get TEDs value for requested channel(s)"""
