@@ -478,7 +478,8 @@ class VibrationVIEW:
         allTedsData = []
         try:
             numChannels = self.GetHardwareInputChannels()
-            allocatedStringArray = [[''] * 2 for _ in range(32)]
+            """ descriptor, value, unit for up to 32 TEDS fields """
+            allocatedStringArray = [[''] * 3 for _ in range(32)]
 
             channelsToCheck = [channel] if channel is not None else range(numChannels)
             
