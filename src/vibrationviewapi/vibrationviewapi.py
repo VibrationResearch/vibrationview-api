@@ -450,6 +450,12 @@ class VibrationVIEW:
         tedsInfo = self.vv.TedsReadAndApply
         return tedsInfo
     @com_method
+    def TedsFromURN(self, urn: str) -> List[str]:
+        """Lookup TEDS transducer by Unique Registration Number (URN)"""
+        result = self.vv.TedsFromURN(urn)
+        return result
+
+    @com_method
     def Teds(self, channel: Optional[int] = None) -> List[dict]:
         """Get TEDs value for requested channel(s)"""
         allTedsData = []
