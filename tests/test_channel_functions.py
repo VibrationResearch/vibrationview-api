@@ -379,7 +379,7 @@ class TestChannelFunctions:
                             total_expected = len(expected_teds)
                             
                             for expected_key, expected_value in expected_teds:
-                                for actual_key, actual_value in teds_info:
+                                for actual_key, actual_value, actual_unit in teds_info:
                                     if actual_key == expected_key and actual_value == expected_value:
                                         matches += 1
                                         break
