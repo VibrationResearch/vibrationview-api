@@ -102,6 +102,8 @@ class TestControlFunctions:
             if not stopped:
                 logger.warning("Test did not stop within timeout period")
             
+            self.vv.SetInputConfigurationFile("10mV per G.vic")
+
             # Find a test file
             test_file = self.find_test_file("sine")
             if not test_file:
@@ -177,6 +179,7 @@ class TestControlFunctions:
             if running:
                 logger.warning("Test did not stop within timeout period")
             
+            self.vv.SetInputConfigurationFile("10mV per G.vic")
             # Find a test file
             test_file = self.find_test_file("random")  # Try a different test type
             if not test_file:
