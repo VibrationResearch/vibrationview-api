@@ -64,7 +64,7 @@ class TestDataAcquisition:
             if sine_test:
                 try:
                     self.vv.RunTest(sine_test)
-                    test_type = self.vv.TestType
+                    test_type = self.vv.TestType()
                     if test_type != vvTestType.TEST_SINE:
                         logger.warning("Not a SINE test")
                         pytest.skip("Could not run a sine test, vectors will have unexpected results")
