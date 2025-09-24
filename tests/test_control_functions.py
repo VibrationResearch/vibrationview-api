@@ -290,7 +290,29 @@ class TestControlFunctions:
                     logger.info("Test stopped after error")
             except:
                 pass
-          
+
+    @pytest.mark.control
+    def test_is_demonstration_mode(self):
+        """Test ReportField functionality for BoxSerialNumber1"""
+        try:
+            # Test that the ReportField method exists and can be called
+            logger.info("Testing ReportField method for BoxSerialNumber1")
+
+            box_serial = self.vv.ReportField("BoxSerialNumber1")
+            assert box_serial is not None
+            logger.info(f"BoxSerialNumber1: {box_serial}")
+
+            # Check if it contains "Demonstration"
+            if "Demonstration" not in box_serial:
+                logger.warning(f"BoxSerialNumber1 does not contain 'Demonstration': {box_serial}")
+                pytest.skip("Not in demonstration mode - tests using StartTest, RunTest may fail")
+            logger.info("BoxSerialNumber1 contains 'Demonstration' as expected")
+
+        except Exception as e:
+            error_info = ExtractComErrorInfo(e)
+            logger.error(f"Error in test_is_demonstration_mode: {error_info}")
+            pytest.fail(f"Error in test_is_demonstration_mode: {error_info}")
+
     @pytest.mark.control
     def teardown_method(self):
         """Clean up after each test method"""
