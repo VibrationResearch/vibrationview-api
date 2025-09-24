@@ -200,6 +200,14 @@ def vv():
     if hasattr(connection, 'SetInputConfigurationFile'):
         connection.SetInputConfigurationFile("10mV per G.vic")
 
+    # Ensure recorder is stopped
+    if hasattr(connection, 'RecordStop'):
+        connection.RecordStop()
+
+    # Ensure any running test is stopped
+    if hasattr(connection, 'StopTest'):
+        connection.StopTest()
+
     yield connection
     
     # Clean up after all tests
@@ -260,17 +268,6 @@ def setup_vv_test(vv, wait_for_condition, wait_for_not, find_test_file, script_d
             request.instance.find_test_file = find_test_file
             request.instance.script_dir = script_dir
             print("DEBUG: Assigned all fixture variables")
-
-            # Ensure recorder is stopped prior to each test
-            print("DEBUG: About to call RecordStop")
-            vv.RecordStop()
-            print("DEBUG: RecordStop completed")
-
-            # Ensure any running test is stopped prior to each test
-            print("DEBUG: About to call StopTest")
-            vv.StopTest()
-            print("DEBUG: StopTest completed")
-
             print("DEBUG: Global fixture setup completed successfully")
         except Exception as fixture_error:
             print(f"DEBUG: Global fixture setup failed: {fixture_error}")
