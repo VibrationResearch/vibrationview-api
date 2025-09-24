@@ -56,9 +56,10 @@ class TestDataAcquisition:
         self.vv.StopTest()
     
     @pytest.mark.data
-    def test_data_acquisition_basic(self):
+    def test_vector_by_vector_enum(self):
         """Test basic data acquisition functions"""
         try:
+            
             # Use the fixture to find the sine test file
             sine_test = self.find_test_file("sine")
             if sine_test:
