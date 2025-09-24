@@ -197,6 +197,9 @@ def vv():
     if connection.vv is None:
         pytest.fail("Connection to VibrationVIEW failed")
     
+    if hasattr(connection, 'SetInputConfigurationFile'):
+        connection.SetInputConfigurationFile("10mV per G.vic")
+
     yield connection
     
     # Clean up after all tests
