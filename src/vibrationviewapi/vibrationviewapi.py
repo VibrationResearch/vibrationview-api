@@ -29,7 +29,7 @@ class COMThreadManager:
     
     def initialize_com(self) -> bool:
         """Initialize COM for the current thread if not already initialized"""
-        if not hasattr(self._thread_data, 'initialized'):
+        if not hasattr(self._thread_data, 'initialized') or not self._thread_data.initialized:
             try:
                 # Try to initialize COM - handle the case where it might already be initialized
                 try:
