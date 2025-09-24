@@ -93,17 +93,6 @@ class TestControlFunctions:
     def test_start_stop(self):
         """Test basic start and stop functionality"""
         try:
-            # Ensure test is stopped first
-            logger.info("Stopping any running test before starting test")
-            self.vv.StopTest()
-            
-            # Wait for test to fully stop
-            stopped = self.wait_for_not(self.vv.IsRunning)
-            if not stopped:
-                logger.warning("Test did not stop within timeout period")
-            
-            self.vv.SetInputConfigurationFile("10mV per G.vic")
-
             # Find a test file
             test_file = self.find_test_file("sine")
             if not test_file:
@@ -179,7 +168,6 @@ class TestControlFunctions:
             if running:
                 logger.warning("Test did not stop within timeout period")
             
-            self.vv.SetInputConfigurationFile("10mV per G.vic")
             # Find a test file
             test_file = self.find_test_file("random")  # Try a different test type
             if not test_file:
