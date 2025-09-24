@@ -240,3 +240,38 @@ def log_to_file(output_dir):
             print(f"Warning: Could not write to log file: {e}")
     
     return _log
+
+
+@pytest.fixture(autouse=True)
+def setup_vv_test(vv, wait_for_condition, wait_for_not, find_test_file, script_dir, request):
+    """Global setup fixture that runs before each test method in VV test classes"""
+    # Only apply to test classes that have test methods (skip conftest.py itself)
+    if request.instance is not None:
+        print("DEBUG: Starting global fixture setup")
+        try:
+            # Assign fixtures to the test instance
+            request.instance.vv = vv
+            print("DEBUG: Assigned vv")
+            request.instance.wait_for_condition = wait_for_condition
+            request.instance.wait_for_not = wait_for_not
+            request.instance.find_test_file = find_test_file
+            request.instance.script_dir = script_dir
+            print("DEBUG: Assigned all fixture variables")
+
+            # Ensure recorder is stopped prior to each test
+            print("DEBUG: About to call RecordStop")
+            vv.RecordStop()
+            print("DEBUG: RecordStop completed")
+
+            # Ensure any running test is stopped prior to each test
+            print("DEBUG: About to call StopTest")
+            vv.StopTest()
+            print("DEBUG: StopTest completed")
+
+            print("DEBUG: Global fixture setup completed successfully")
+        except Exception as fixture_error:
+            print(f"DEBUG: Global fixture setup failed: {fixture_error}")
+            import traceback
+            traceback.print_exc()
+            raise
+

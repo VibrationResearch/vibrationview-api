@@ -61,19 +61,9 @@ except ImportError as e:
 
 class TestVibrationVIEWWindow:
     """Test class for VibrationVIEW Window Control functions"""
-    
-    @pytest.fixture(autouse=True)
-    def _setup(self, vv):
-        """Setup method that runs before each test method"""
-        self.vv = vv
-        
-        # Ensure recorder is stopped prior to each test
-        self.vv.RecordStop()
-        
-        # Ensure any running test is stopped prior to each test
-        self.vv.StopTest()
-        
-        # Find the VibrationVIEW windows
+
+    def _find_vv_windows(self):
+        """Helper method to find VibrationVIEW windows"""
         try:
             windows = find_vibrationview_windows()
             if windows:
@@ -89,6 +79,7 @@ class TestVibrationVIEWWindow:
     @pytest.mark.connection
     def test_connection(self):
         """Test connection to VibrationVIEW"""
+        self._find_vv_windows()
         try:
             assert self.vv is not None
             logger.info("Connection to VibrationVIEW established")

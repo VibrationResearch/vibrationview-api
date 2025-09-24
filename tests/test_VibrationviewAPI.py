@@ -47,21 +47,6 @@ except ImportError:
 class TestVibrationVIEW:
     """Test class for VibrationVIEW pytest implementation"""
     
-    @pytest.fixture(autouse=True)
-    def _setup(self, vv, wait_for_condition, wait_for_not, find_test_file, script_dir):
-        """Setup method that runs before each test method"""
-        self.vv = vv
-        self.wait_for_condition = wait_for_condition
-        self.wait_for_not = wait_for_not
-        self.find_test_file = find_test_file
-        self.script_dir = script_dir
-        
-        # Ensure recorder is stopped prior to each test
-        self.vv.RecordStop()
-        
-        # Ensure any running test is stopped prior to each test
-        self.vv.StopTest()
-    
     @pytest.mark.connection
     def test_connection(self):
         """Test connection to VibrationVIEW"""

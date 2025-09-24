@@ -22,25 +22,14 @@ logger = logging.getLogger(__name__)
 
 class TestVibrationVIEWReportField:
     """Test class for VibrationVIEW ReportField method"""
-    
-    @pytest.fixture(autouse=True)
-    def _setup(self, vv, find_test_file):
-        """Setup method that runs before each test method"""
-        self.vv = vv
-        self.find_test_file = find_test_file
-        
-        # Ensure recorder is stopped prior to each test
-        self.vv.RecordStop()
-        
-        # Ensure any running test is stopped prior to each test
-        self.vv.StopTest()
-        
-        # Open a test file to work with
+
+    def _open_test_file(self):
+        """Helper method to open a test file"""
         test_file = self.find_test_file("sine")
         if not test_file:
             logger.warning("No sine test file found for testing")
             pytest.skip("No sine test file found for testing")
-        
+
         try:
             self.vv.OpenTest(test_file)
             logger.info(f"Opened test file: {test_file}")
@@ -52,6 +41,7 @@ class TestVibrationVIEWReportField:
     
     def test_report_field_invalid(self):
         """Test ReportField method with invalid field name"""
+        self._open_test_file()
         try:
             # Try to get a report field with an invalid name
             value = self.vv.ReportField("NonExistentField")
@@ -73,6 +63,7 @@ class TestVibrationVIEWReportField:
     
     def test_multiple_report_fields(self):
         """Test retrieving multiple report fields in sequence"""
+        self._open_test_file()
         fields_to_test = [
             "ChName1", 
             "ChAcp1", 
