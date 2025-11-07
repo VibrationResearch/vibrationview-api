@@ -559,6 +559,61 @@ class VibrationVIEW:
             print(f"Error getting TEDS data: {e}")
             return []
 
+    # -- Database methods --
+    @com_method
+    def UpdateChannelConfigFromDatabase(self, channel: int) -> bool:
+        """
+        Read database values and apply differences to document for the specified channel.
+
+        Args:
+            channel: Channel number (0-based)
+
+        Returns:
+            True if successful, False otherwise
+        """
+        return self.vv.UpdateChannelConfigFromDatabase(channel)
+
+    @com_method
+    def IsChannelDifferentThanDatabase(self, channel: int) -> bool:
+        """
+        Check if channel configuration differs from database.
+
+        Args:
+            channel: Channel number (0-based)
+
+        Returns:
+            True if channel differs from database, False otherwise
+        """
+        return bool(self.vv.IsChannelDifferentThanDatabase(channel))
+
+    @com_method
+    def ChannelDatabaseIDs(self, channel: int) -> List[str]:
+        """
+        Get database GUIDs for a channel.
+
+        Args:
+            channel: Channel number (0-based)
+
+        Returns:
+            Array of GUID strings associated with the channel
+        """
+        result = self.vv.ChannelDatabaseIDs(channel)
+        return result
+
+    @com_method
+    def TransducerDatabaseRecord(self, guid: str) -> List[str]:
+        """
+        Get all database fields for a given GUID.
+
+        Args:
+            guid: Transducer database GUID
+
+        Returns:
+            Array of strings containing all database fields for the transducer
+        """
+        result = self.vv.TransducerDatabaseRecord(guid)
+        return result
+
     # -- Test control methods --
     @com_method
     def SweepUp(self) -> bool:
