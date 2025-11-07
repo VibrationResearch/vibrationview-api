@@ -424,6 +424,38 @@ class VibrationVIEW:
         return self.vv.ReportField(fieldName)
 
     @com_method
+    def ReportVector(self, vectors: str, array_out: Optional[List] = None) -> List:
+        """
+        Get report vector specified by sVector.
+
+        Args:
+            vectors: String specifying which vector(s) to retrieve
+            array_out: Optional pre-allocated array. If properly sized, it will be filled;
+                      otherwise a new array is allocated
+
+        Returns:
+            Array containing the requested vector data
+        """
+        result = self.vv.ReportVector(vectors, array_out)
+        return result
+
+    @com_method
+    def ReportVectorHeader(self, vectors: str, array_out: Optional[List] = None) -> List:
+        """
+        Get report vector headers specified by sVector.
+
+        Args:
+            vectors: String specifying which vector header(s) to retrieve
+            array_out: Optional pre-allocated array. If properly sized, it will be filled;
+                      otherwise a new array is allocated
+
+        Returns:
+            Array containing the requested vector header data
+        """
+        result = self.vv.ReportVectorHeader(vectors, array_out)
+        return result
+
+    @com_method
     def RearInputUnit(self, channel: int) -> str:
         """Get units for the rear input channel"""
         return self.vv.RearInputUnit(channel)
