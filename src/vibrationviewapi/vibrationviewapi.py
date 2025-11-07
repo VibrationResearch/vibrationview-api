@@ -466,24 +466,61 @@ class VibrationVIEW:
         return self.vv.RearInputLabel(channel)
     
     @com_method
-    def TedsRead(self) -> List[dict]:
-        """Get TEDs values for all channels"""
+    def TedsRead(self) -> List[str]:
+        """
+        Get TEDS URNs for all channels.
+        Returns a 1D array of URN strings, one per channel.
+        """
         tedsInfo = self.vv.TedsRead
         return tedsInfo
 
     @com_method
-    def TedsVerifyAndApply(self, tedsvalues: List[dict]) -> List[dict]:
-        """Apply TEDs values for all channels"""
-        tedsInfo = self.vv.TedsVerifyAndApply(tedsvalues)
-        return tedsInfo
+    def TedsVerifyAndApply(self, urn_array: List[str]) -> List[str]:
+        """
+        Verify TEDS data against hardware and apply to livemode if matching.
+
+        Args:
+            urn_array: 1D array of URN strings, one per channel
+
+        Returns:
+            1D array of URN strings after verification and application
+        """
+        result = self.vv.TedsVerifyAndApply(urn_array)
+        return result
+
     @com_method
-    def TedsReadAndApply(self) -> List[dict]:
-        """Apply TEDs values for all channels"""
+    def TedsVerifyStringAndApply(self, urn_string: str) -> List[str]:
+        """
+        Verify TEDS data from a single URN string and apply to livemode if matching.
+
+        Args:
+            urn_string: Single URN string
+
+        Returns:
+            1D array of URN strings after verification and application
+        """
+        result = self.vv.TedsVerifyStringAndApply(urn_string)
+        return result
+
+    @com_method
+    def TedsReadAndApply(self) -> List[str]:
+        """
+        Read TEDS URNs from hardware and apply to livemode.
+        Returns a 1D array of URN strings, one per channel.
+        """
         tedsInfo = self.vv.TedsReadAndApply
         return tedsInfo
     @com_method
     def TedsFromURN(self, urn: str) -> List[str]:
-        """Lookup TEDS transducer by Unique Registration Number (URN)"""
+        """
+        Lookup and decode TEDS transducer by Unique Registration Number (URN).
+
+        Args:
+            urn: Unique Registration Number string
+
+        Returns:
+            Array of TEDS data strings
+        """
         result = self.vv.TedsFromURN(urn)
         return result
 
