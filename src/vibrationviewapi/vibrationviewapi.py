@@ -678,17 +678,17 @@ class VibrationVIEW:
     @com_method
     def HardwareSupportsCapacitorCoupled(self, channel: int) -> bool:
         """Check if hardware supports capacitor coupled for a channel"""
-        return self.vv.HardwareSupportsCapacitorCoupled(channel)
+        return bool(self.vv.HardwareSupportsCapacitorCoupled(channel))
 
     @com_method
     def HardwareSupportsAccelPowerSource(self, channel: int) -> bool:
         """Check if hardware supports accelerometer power source for a channel"""
-        return self.vv.HardwareSupportsAccelPowerSource(channel)
+        return bool(self.vv.HardwareSupportsAccelPowerSource(channel))
 
     @com_method
     def HardwareSupportsDifferential(self, channel: int) -> bool:
         """Check if hardware supports differential for a channel"""
-        return self.vv.HardwareSupportsDifferential(channel)
+        return bool(self.vv.HardwareSupportsDifferential(channel))
 
     @com_method
     def RecordStart(self) -> bool:
