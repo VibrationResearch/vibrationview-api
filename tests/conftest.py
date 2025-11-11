@@ -268,6 +268,15 @@ def setup_vv_test(vv, wait_for_condition, wait_for_not, find_test_file, script_d
             request.instance.find_test_file = find_test_file
             request.instance.script_dir = script_dir
             print("DEBUG: Assigned all fixture variables")
+
+            # Load "10mV per G.vic" for all tests except TEDS tests
+            # Check if this is NOT a TEDS test by checking the test file name
+            test_file_path = request.fspath.basename
+            if test_file_path != "test_teds_functions.py":
+                if hasattr(vv, 'SetInputConfigurationFile'):
+                    vv.SetInputConfigurationFile("10mV per G.vic")
+                    print("DEBUG: Loaded input configuration: 10mV per G.vic")
+
             print("DEBUG: Global fixture setup completed successfully")
         except Exception as fixture_error:
             print(f"DEBUG: Global fixture setup failed: {fixture_error}")
