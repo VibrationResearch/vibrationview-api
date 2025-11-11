@@ -615,29 +615,26 @@ class TestTedsFunctions:
             if channel_modified is None:
                 pytest.skip("No suitable URN found to clear for missing URN test")
 
-            # Now test TedsVerifyAndApply with the missing URN array
-            logger.info("Testing TedsVerifyAndApply with missing URN data (may raise exception or succeed)")
+            # Now test TedsVerifyAndApply with the missing URN array - EXPECTING EXCEPTION
+            logger.info("Testing TedsVerifyAndApply with missing URN data - expecting exception")
+
+            exception_raised = False
             try:
                 verify_result = self.vv.TedsVerifyAndApply(tuple(modified_urns))
 
-                # If we get here, the missing URN was handled gracefully
-                assert verify_result is not None, "TedsVerifyAndApply should return a result"
-                logger.info(f"TedsVerifyAndApply returned: {type(verify_result)} with length {len(verify_result) if hasattr(verify_result, '__len__') else 'N/A'}")
-
-                assert isinstance(verify_result, (tuple, list)), f"TedsVerifyAndApply should return a tuple/list of URNs, got {type(verify_result)}"
-                assert len(verify_result) == num_channels, f"Expected {num_channels} results, got {len(verify_result)}"
-
-                logger.warning("Missing URN was handled gracefully - API may be more lenient than expected")
-                for channel_index, result in enumerate(verify_result):
-                    logger.info(f"Channel {channel_index+1}: Result: {result}")
+                # If we get here, no exception was raised - this is unexpected
+                logger.error(f"TedsVerifyAndApply did not raise exception for missing URN. Returned: {type(verify_result)}")
+                pytest.fail(f"TedsVerifyAndApply should raise an exception for missing URN, but returned: {verify_result}")
 
             except Exception as e:
-                # This is actually the expected behavior for missing URNs
+                # This is the expected behavior - missing URNs should raise exceptions
                 error_info = ExtractComErrorInfo(e)
-                logger.info(f"TedsVerifyAndApply raised expected exception for missing URN: {error_info}")
-                # This is the correct behavior - missing URNs should raise exceptions
+                logger.info(f"TedsVerifyAndApply correctly raised exception for missing URN: {error_info}")
+                exception_raised = True
 
-            logger.info("Successfully handled missing URN test case")
+            # Assert that an exception was raised
+            assert exception_raised, "TedsVerifyAndApply should raise an exception for missing URN"
+            logger.info("Test passed: TedsVerifyAndApply correctly raised exception for missing URN")
 
         except Exception as e:
             error_msg = ExtractComErrorInfo(e)
