@@ -796,17 +796,33 @@ class TestTedsFunctions:
             error_info = ExtractComErrorInfo(e)
             logger.error(f"Error in test_TedsReadAndApply_with_sine_named_config_should_fail: {error_info}")
             pytest.fail(f"Error in test_TedsReadAndApply_with_sine_named_config_should_fail: {error_info}")
+        finally:
+            # Reload default TEDS configuration
+            try:
+                logger.info("Reloading default TEDS configuration")
+                config_subfolder = "InputConfig"
+                config_folder = os.path.join(self.script_dir, '..', config_subfolder)
+                config_file = os.path.join(config_folder, TestTedsFunctions.teds_config_file)
+
+                if os.path.exists(config_file):
+                    self.vv.SetInputConfigurationFile(config_file)
+                    logger.info("Default TEDS configuration reloaded successfully")
+                else:
+                    logger.warning(f"Default TEDS configuration file not found: {config_file}")
+            except Exception as e:
+                error_info = ExtractComErrorInfo(e)
+                logger.warning(f"Failed to reload default TEDS configuration: {error_info}")
 
     @pytest.mark.teds
     def test_TedsRead_with_demo_mode_TEDS_profile_should_pass(self):
-        """Test TedsRead with sine_with_Demo_mode_Input_configuration_TEDS.vsp profile - should pass"""
+        """Test TedsRead with sine_with_Input_configuration_TEDS.vsp profile - should pass"""
         try:
             # Load TEDS configuration if not already loaded
             self._ensure_teds_config_loaded()
 
             # Load the demo mode TEDS profile
             profile_folder = os.path.join(self.script_dir, '..', 'profiles')
-            profile_file = os.path.join(profile_folder, 'sine_with_Demo_mode_Input_configuration_TEDS.vsp')
+            profile_file = os.path.join(profile_folder, 'sine_with_Input_configuration_TEDS.vsp')
 
             if not os.path.exists(profile_file):
                 pytest.skip(f"Profile file not found: {profile_file}")
@@ -878,6 +894,22 @@ class TestTedsFunctions:
             error_info = ExtractComErrorInfo(e)
             logger.error(f"Error in test_TedsRead_with_demo_mode_TEDS_profile_should_pass: {error_info}")
             pytest.fail(f"Error in test_TedsRead_with_demo_mode_TEDS_profile_should_pass: {error_info}")
+        finally:
+            # Reload default TEDS configuration
+            try:
+                logger.info("Reloading default TEDS configuration")
+                config_subfolder = "InputConfig"
+                config_folder = os.path.join(self.script_dir, '..', config_subfolder)
+                config_file = os.path.join(config_folder, TestTedsFunctions.teds_config_file)
+
+                if os.path.exists(config_file):
+                    self.vv.SetInputConfigurationFile(config_file)
+                    logger.info("Default TEDS configuration reloaded successfully")
+                else:
+                    logger.warning(f"Default TEDS configuration file not found: {config_file}")
+            except Exception as e:
+                error_info = ExtractComErrorInfo(e)
+                logger.warning(f"Failed to reload default TEDS configuration: {error_info}")
 
     @pytest.mark.teds
     def test_TedsVerifyAndApply_with_channel1_TEDS_should_fail(self):

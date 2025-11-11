@@ -558,6 +558,26 @@ class TestInputConfiguration:
             error_msg = ExtractComErrorInfo(e)
             logger.error(f"Error in test_profile_with_forced_input_configuration_should_fail: {error_msg}")
             pytest.fail(f"Error in test_profile_with_forced_input_configuration_should_fail: {error_msg}")
+        finally:
+            # Reload default profile and configuration
+            try:
+                logger.info("Reloading default profile and configuration")
+                profile_folder = os.path.join(self.script_dir, '..', 'profiles')
+                default_profile = os.path.join(profile_folder, 'sine.vsp')
+
+                if os.path.exists(default_profile):
+                    self.vv.OpenTest(default_profile)
+                    logger.info("Default sine profile reloaded successfully")
+                else:
+                    logger.warning(f"Default profile not found: {default_profile}")
+
+                # Reload default input configuration
+                self.vv.SetInputConfigurationFile("10mV per G.vic")
+                logger.info("Default input configuration reloaded successfully")
+
+            except Exception as e:
+                error_info = ExtractComErrorInfo(e)
+                logger.warning(f"Failed to reload defaults: {error_info}")
 
     def _apply_final_configuration(self, config_folder):
         """Apply the final configuration file"""
