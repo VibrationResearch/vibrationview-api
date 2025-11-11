@@ -424,19 +424,6 @@ class TestChannelFunctions:
             logger.error(f"Error in test_compare_channel_configs: {error_info}")
             pytest.fail(f"Error in test_compare_channel_configs: {error_info}")
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 if __name__ == "__main__":
     # Configure logging
     logging.basicConfig(
