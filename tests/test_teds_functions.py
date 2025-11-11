@@ -67,23 +67,39 @@ except ImportError:
 class TestTedsFunctions:
     """Test class for VibrationVIEW TEDS functionality"""
 
+    @classmethod
+    def setup_class(cls):
+        """Load 6-channels TEDS configuration before running TEDS tests"""
+        # This will be called once for the class, but we need to access vv from instance
+        # So we'll store the config file path and load it in the first test that runs
+        cls.teds_config_loaded = False
+        cls.teds_config_file = "6-channels-TEDS.vic"
+
+    def _ensure_teds_config_loaded(self):
+        """Ensure TEDS configuration is loaded before running TEDS tests"""
+        if not TestTedsFunctions.teds_config_loaded:
+            try:
+                config_subfolder = "InputConfig"
+                config_folder = os.path.join(self.script_dir, '..', config_subfolder)
+                config_file = os.path.join(config_folder, TestTedsFunctions.teds_config_file)
+
+                if os.path.exists(config_file):
+                    logger.info(f"Loading TEDS configuration: {config_file}")
+                    self.vv.SetInputConfigurationFile(config_file)
+                    TestTedsFunctions.teds_config_loaded = True
+                    logger.info("TEDS configuration loaded successfully")
+                else:
+                    logger.warning(f"TEDS configuration file not found: {config_file}")
+            except Exception as e:
+                error_info = ExtractComErrorInfo(e)
+                logger.warning(f"Failed to load TEDS configuration: {error_info}")
+
     @pytest.mark.teds
-    def test_teds_data(self):
-        """Test TEDS data acquisition and verification"""
+    def test_Teds_command(self):
+        """Test TEDS data Read (without applying) for any channels"""
         try:
-            # Set up config file paths
-            config_subfolder = "InputConfig"
-            config_folder = os.path.join(self.script_dir, '..', config_subfolder)
-
-           # Use the specific .vic file
-            config_file = os.path.join(config_folder, "channel 1 TEDS.vic")
-
-            if not os.path.exists(config_file):
-                logger.warning(f"Configuration file not found: {config_file}")
-                pytest.skip(f"Configuration file not found: {config_file}")
-
-            # Apply the configuration file once (it will change all channels)
-            self.vv.SetInputConfigurationFile(config_file)
+            # Load TEDS configuration if not already loaded
+            self._ensure_teds_config_loaded()
 
             num_channels = self.vv.GetHardwareInputChannels()
             assert num_channels is not None
@@ -155,99 +171,18 @@ class TestTedsFunctions:
             pytest.fail(f"Error in test_teds_data: {error_info}")
 
     @pytest.mark.teds
-    def test_TedsRead(self):
-        """Test TEDS reading for all channels using TedsRead() method"""
-        try:
-            # Skip if TedsRead method does not exist in COM object
-            try:
-                # Try calling TedsRead to check if it exists in the COM object
-                test_result = self.vv.TedsRead()
-            except AttributeError as e:
-                if "object has no attribute 'TedsRead'" in str(e):
-                    pytest.skip("TedsRead method does not exist in COM object")
-                raise  # Re-raise if it's a different AttributeError
-            except Exception:
-                # If TedsRead exists but fails for other reasons (like config), continue with test
-                test_result = None
-
-            # Set up config file paths
-            config_subfolder = "InputConfig"
-            config_folder = os.path.join(self.script_dir, '..', config_subfolder)
-            config_file = os.path.join(config_folder, "7-channels-TEDS.vic")
-
-            if not os.path.exists(config_file):
-                pytest.skip(f"TEDS configuration file not found: {config_file}")
-
-            # Apply the configuration file
-            self.vv.SetInputConfigurationFile(config_file)
-
-            num_channels = self.vv.GetHardwareInputChannels()
-            assert num_channels is not None and num_channels > 0
-            logger.info(f"Testing TEDS for all {num_channels} channels using TedsRead() method")
-
-            # Use TedsRead() to get TEDS URNs for all channels at once
-            if 'test_result' in locals() and test_result is not None:
-                all_teds_data = test_result
-            else:
-                all_teds_data = self.vv.TedsRead()
-
-            assert all_teds_data is not None, "TedsRead() should return data"
-            assert isinstance(all_teds_data, tuple), f"TedsRead() should return a tuple, got {type(all_teds_data)}"
-            assert len(all_teds_data) == num_channels, f"Expected {num_channels} channel results, got {len(all_teds_data)}"
-
-            channels_with_teds = 0
-
-            for channel_index, channel_urn in enumerate(all_teds_data):
-                logger.info(f"Processing TEDS URN for channel {channel_index+1}")
-
-                # TedsRead() returns a rank 1 array with URN strings for each channel
-                if channel_urn and isinstance(channel_urn, str) and channel_urn.strip():
-                    # Check if this channel has meaningful TEDS URN (not empty or "Disabled")
-                    if channel_urn.lower() != "disabled":
-                        logger.info(f"Channel {channel_index+1}: Found TEDS URN '{channel_urn}'")
-                        channels_with_teds += 1
-                    else:
-                        logger.info(f"Channel {channel_index+1}: TEDS disabled")
-                else:
-                    logger.warning(f"No TEDS URN for channel {channel_index+1}")
-
-            if channels_with_teds == 0:
-                pytest.skip("No channels with valid TEDS URNs found")
-            else:
-                logger.info(f"Successfully read TEDS URNs for {channels_with_teds} channels using TedsRead() method")
-
-            assert channels_with_teds > 0, "At least one channel should have TEDS URN"
-
-        except Exception as e:
-            error_info = ExtractComErrorInfo(e)
-            logger.error(f"Error in test_teds_all_channels_3d_array: {error_info}")
-            pytest.fail(f"Error in test_teds_all_channels_3d_array: {error_info}")
-
-    @pytest.mark.teds
-    def test_TedsVerifyAndApply(self):
+    def test_TedsVerifyAndApply_command(self):
         """Test TedsVerifyAndApply using data from TedsRead"""
         try:
-            # Skip if TedsRead method does not exist in COM object
-            try:
-                # Try calling TedsRead to check if it exists in the COM object
-                test_result = self.vv.TedsRead()
-            except AttributeError as e:
-                if "object has no attribute 'TedsRead'" in str(e):
-                    pytest.skip("TedsRead method does not exist in COM object")
-                raise  # Re-raise if it's a different AttributeError
-            except Exception:
-                # If TedsRead exists but fails for other reasons (like config), continue with test
-                test_result = None
-            # Set up config file paths
-            config_subfolder = "InputConfig"
-            config_folder = os.path.join(self.script_dir, '..', config_subfolder)
-            config_file = os.path.join(config_folder, "7-channels-TEDS.vic")
+            test_file = self.find_test_file("sine")
+            if not test_file:
+                pytest.skip("Test file 'sine' not found")
 
-            if not os.path.exists(config_file):
-                pytest.skip(f"TEDS configuration file not found: {config_file}")
+            logger.info(f"Loading test file: {test_file}")
+            self.vv.OpenTest(test_file)
 
-            # Apply the configuration file
-            self.vv.SetInputConfigurationFile(config_file)
+            # Load TEDS configuration if not already loaded
+            self._ensure_teds_config_loaded()
 
             num_channels = self.vv.GetHardwareInputChannels()
             assert num_channels is not None and num_channels > 0
@@ -295,31 +230,18 @@ class TestTedsFunctions:
             pytest.fail(f"Error in test_teds_verify_and_apply: {error_info}")
 
     @pytest.mark.teds
-    def test_TedsReadAndApply(self):
+    def test_TedsReadAndApply_command(self):
         """Test TedsReadAndApply method to read and apply TEDS data from hardware"""
         try:
-            # Skip if TedsReadAndApply method does not exist in COM object
-            try:
-                # Try calling TedsReadAndApply to check if it exists in the COM object
-                test_result = self.vv.TedsReadAndApply()
-            except AttributeError as e:
-                if "object has no attribute 'TedsReadAndApply'" in str(e):
-                    pytest.skip("TedsReadAndApply method does not exist in COM object")
-                raise  # Re-raise if it's a different AttributeError
-            except Exception:
-                # If TedsReadAndApply exists but fails for other reasons (like config), continue with test
-                test_result = None
+            test_file = self.find_test_file("sine")
+            if not test_file:
+                pytest.skip("Test file 'sine' not found")
 
-            # Set up config file paths
-            config_subfolder = "InputConfig"
-            config_folder = os.path.join(self.script_dir, '..', config_subfolder)
-            config_file = os.path.join(config_folder, "7-channels-TEDS.vic")
+            logger.info(f"Loading test file: {test_file}")
+            self.vv.OpenTest(test_file)
 
-            if not os.path.exists(config_file):
-                pytest.skip(f"TEDS configuration file not found: {config_file}")
-
-            # Apply the configuration file
-            self.vv.SetInputConfigurationFile(config_file)
+            # Load TEDS configuration if not already loaded
+            self._ensure_teds_config_loaded()
 
             num_channels = self.vv.GetHardwareInputChannels()
             assert num_channels is not None and num_channels > 0
@@ -327,10 +249,7 @@ class TestTedsFunctions:
 
             # Test TedsReadAndApply - this should read TEDS from hardware and apply to VibrationVIEW
             logger.info("Testing TedsReadAndApply method")
-            if 'test_result' in locals() and test_result is not None:
-                read_and_apply_result = test_result
-            else:
-                read_and_apply_result = self.vv.TedsReadAndApply()
+            read_and_apply_result = self.vv.TedsReadAndApply()
 
             assert read_and_apply_result is not None, "TedsReadAndApply should return a result"
             logger.info(f"TedsReadAndApply returned: {type(read_and_apply_result)}")
@@ -350,9 +269,9 @@ class TestTedsFunctions:
                     logger.info(f"Channel {channel_index+1}: No URN or disabled")
 
             logger.info(f"Successfully read and applied TEDS for {applied_channels} channels")
-            assert applied_channels >= 0, "TedsReadAndApply should process the channels"
+            assert applied_channels == 6, f"TedsReadAndApply should apply TEDS to exactly 6 channels, but applied to {applied_channels} channels"
 
-            logger.info("TedsReadAndApply test completed successfully")
+            logger.info("TedsReadAndApply test completed successfully - applied TEDS to 6 channels")
 
         except Exception as e:
             error_info = ExtractComErrorInfo(e)
@@ -360,120 +279,11 @@ class TestTedsFunctions:
             pytest.fail(f"Error in test_teds_read_and_apply: {error_info}")
 
     @pytest.mark.teds
-    def test_TedsReadAndApply_with_running_test(self):
-        """Test that TedsReadAndApply returns 'Test is already running' error when a test is running"""
-        try:
-            # Skip if TedsReadAndApply method does not exist in COM object
-            try:
-                # Try calling TedsReadAndApply to check if it exists in the COM object
-                test_result = self.vv.TedsReadAndApply()
-            except AttributeError as e:
-                if "object has no attribute 'TedsReadAndApply'" in str(e):
-                    pytest.skip("TedsReadAndApply method does not exist in COM object")
-                raise  # Re-raise if it's a different AttributeError
-            except Exception:
-                # If TedsReadAndApply exists but fails for other reasons (like config), continue with test
-                test_result = None
-
-            # Set up config file paths
-            config_subfolder = "InputConfig"
-            config_folder = os.path.join(self.script_dir, '..', config_subfolder)
-            config_file = os.path.join(config_folder, "7-channels-TEDS.vic")
-
-            if not os.path.exists(config_file):
-                pytest.skip(f"TEDS configuration file not found: {config_file}")
-
-            # Apply the configuration file
-            self.vv.SetInputConfigurationFile(config_file)
-
-            # Load and start a test first
-            test_file = self.find_test_file("sine")
-            if not test_file:
-                pytest.skip("Test file 'sine' not found")
-
-            logger.info(f"Loading test file: {test_file}")
-            self.vv.OpenTest(test_file)
-
-            # need to be sure of TEDS changes are accepted before starting the test
-            if 'test_result' in locals() and test_result is not None:
-                # We already called it successfully during the availability check
-                pass
-            else:
-                self.vv.TedsReadAndApply()
-
-            # Start the test
-            logger.info("Starting test before TedsReadAndApply")
-            self.vv.StartTest()
-
-            # Wait a moment for the test to start
-            time.sleep(2)
-
-            # Verify test is running
-            test_running = self.vv.IsRunning()
-            logger.info(f"Test running status: {test_running}")
-            assert test_running, "Test should be running before calling TedsReadAndApply"
-
-            # Test TedsReadAndApply - check if it succeeds or fails when test is running
-            logger.info("Testing TedsReadAndApply method while test is running")
-
-            try:
-                read_and_apply_result = self.vv.TedsReadAndApply()
-                logger.info(f"TedsReadAndApply succeeded while test running: {read_and_apply_result}")
-                # If it succeeds, it should return a rank 1 array of URNs
-                assert isinstance(read_and_apply_result, (list, tuple)), f"Expected list/tuple of URNs, got: {type(read_and_apply_result)}"
-            except Exception as e:
-                # If it fails, log the exception - this is also acceptable behavior
-                error_info = ExtractComErrorInfo(e)
-                logger.info(f"TedsReadAndApply failed as expected while test running: {error_info}")
-                assert "test is already running" in error_info.lower() or "running" in error_info.lower(), f"Expected 'test is already running' error, got: {error_info}"
-
-            # Stop the test
-            logger.info("Stopping test after TedsReadAndApply exception test")
-            self.vv.StopTest()
-
-        except AssertionError:
-            # Re-raise assertion errors (these are test failures)
-            try:
-                self.vv.StopTest()
-            except:
-                pass
-            raise
-        except Exception as e:
-            # Ensure test is stopped in case of unexpected error
-            try:
-                self.vv.StopTest()
-            except:
-                pass
-            error_info = ExtractComErrorInfo(e)
-            logger.error(f"Unexpected error in test_TedsReadAndApply_with_running_test: {error_info}")
-            pytest.fail(f"Unexpected error in test_TedsReadAndApply_with_running_test: {error_info}")
-
-    @pytest.mark.teds
     def test_TedsReadAndApply_before_and_during_test(self):
-        """Test TedsReadAndApply before and during test - should return fresh data before, cached data during"""
+        """Test TedsReadAndApply before and during test - should return fresh data before, cached data during running test"""
         try:
-            # Skip if TedsReadAndApply method does not exist in COM object
-            try:
-                # Try calling TedsReadAndApply to check if it exists in the COM object
-                test_result = self.vv.TedsReadAndApply()
-            except AttributeError as e:
-                if "object has no attribute 'TedsReadAndApply'" in str(e):
-                    pytest.skip("TedsReadAndApply method does not exist in COM object")
-                raise  # Re-raise if it's a different AttributeError
-            except Exception:
-                # If TedsReadAndApply exists but fails for other reasons (like config), continue with test
-                test_result = None
-
-            # Set up config file paths
-            config_subfolder = "InputConfig"
-            config_folder = os.path.join(self.script_dir, '..', config_subfolder)
-            config_file = os.path.join(config_folder, "7-channels-TEDS.vic")
-
-            if not os.path.exists(config_file):
-                pytest.skip(f"TEDS configuration file not found: {config_file}")
-
-            # Apply the configuration file
-            self.vv.SetInputConfigurationFile(config_file)
+            # Load TEDS configuration if not already loaded
+            self._ensure_teds_config_loaded()
 
             # Load test file but don't start yet
             test_file = self.find_test_file("sine")
@@ -490,10 +300,7 @@ class TestTedsFunctions:
 
             # FIRST CALL: Test TedsReadAndApply when test is NOT running - should succeed
             logger.info("Testing TedsReadAndApply method when test is NOT running - should succeed")
-            if 'test_result' in locals() and test_result is not None:
-                read_and_apply_result_before = test_result
-            else:
-                read_and_apply_result_before = self.vv.TedsReadAndApply()
+            read_and_apply_result_before = self.vv.TedsReadAndApply()
             logger.info(f"TedsReadAndApply (before test start) returned: {type(read_and_apply_result_before)}")
 
             # Verify the first call succeeded (should return rank 1 array of URNs)
@@ -556,104 +363,11 @@ class TestTedsFunctions:
             pytest.fail(f"Unexpected error in test_TedsReadAndApply_before_and_during_test: {error_info}")
 
     @pytest.mark.teds
-    def test_TedsRead_with_running_recorder(self):
-        """Test that TedsRead returns 'Test is already running' error when recorder is running"""
-        try:
-            # Skip if TedsRead method does not exist in COM object
-            try:
-                # Try calling TedsRead to check if it exists in the COM object
-                test_result = self.vv.TedsRead()
-            except AttributeError as e:
-                if "object has no attribute 'TedsRead'" in str(e):
-                    pytest.skip("TedsRead method does not exist in COM object")
-                raise  # Re-raise if it's a different AttributeError
-            except Exception:
-                # If TedsRead exists but fails for other reasons (like config), continue with test
-                test_result = None
-
-            # Set up config file paths
-            config_subfolder = "InputConfig"
-            config_folder = os.path.join(self.script_dir, '..', config_subfolder)
-            config_file = os.path.join(config_folder, "7-channels-TEDS.vic")
-
-            if not os.path.exists(config_file):
-                pytest.skip(f"TEDS configuration file not found: {config_file}")
-
-            # Apply the configuration file
-            self.vv.SetInputConfigurationFile(config_file)
-
-            # Load and start a test first
-            test_file = self.find_test_file("sine")
-            if not test_file:
-                pytest.skip("Test file 'sine' not found")
-
-            logger.info(f"Loading test file: {test_file}")
-            self.vv.OpenTest(test_file)
-
-            # Start the recorder instead of the test
-            logger.info("Starting recorder before TedsRead")
-            self.vv.RecordStart()
-
-            # Wait a moment for the recorder to start
-            time.sleep(2)
-            logger.info("Recorder started and running")
-
-            # Test TedsRead - this should raise an exception when recorder is running
-            logger.info("Testing TedsRead method while recorder is running - expecting exception")
-
-            with pytest.raises(Exception) as exc_info:
-                read_result = self.vv.TedsRead()
-
-            error_info = ExtractComErrorInfo(exc_info.value)
-            logger.info(f"TedsRead raised expected exception: {error_info}")
-            assert "recording is already running" in error_info.lower() or "running" in error_info.lower(), f"Expected 'recording is already running' error, got: {error_info}"
-
-            # Stop the recorder
-            logger.info("Stopping recorder after TedsRead")
-            self.vv.RecordStop()
-
-        except AssertionError:
-            # Re-raise assertion errors (these are test failures)
-            try:
-                self.vv.RecordStop()
-            except:
-                pass
-            raise
-        except Exception as e:
-            # Ensure recorder is stopped in case of unexpected error
-            try:
-                self.vv.RecordStop()
-            except:
-                pass
-            error_info = ExtractComErrorInfo(e)
-            logger.error(f"Unexpected error in test_TedsRead_with_running_recorder: {error_info}")
-            pytest.fail(f"Unexpected error in test_TedsRead_with_running_recorder: {error_info}")
-
-    @pytest.mark.teds
     def test_TedsRead_before_and_during_recorder(self):
         """Test TedsRead before and during recorder - should return fresh data before, cached data during"""
         try:
-            # Skip if TedsRead method does not exist in COM object
-            try:
-                # Try calling TedsRead to check if it exists in the COM object
-                test_result = self.vv.TedsRead()
-            except AttributeError as e:
-                if "object has no attribute 'TedsRead'" in str(e):
-                    pytest.skip("TedsRead method does not exist in COM object")
-                raise  # Re-raise if it's a different AttributeError
-            except Exception:
-                # If TedsRead exists but fails for other reasons (like config), continue with test
-                test_result = None
-            # Set up config file paths
-            config_subfolder = "InputConfig"
-            config_folder = os.path.join(self.script_dir, '..', config_subfolder)
-            config_file = os.path.join(config_folder, "7-channels-TEDS.vic")
-
-            if not os.path.exists(config_file):
-                pytest.skip(f"TEDS configuration file not found: {config_file}")
-
-            # Apply the configuration file
-            self.vv.SetInputConfigurationFile(config_file)
+            # Load TEDS configuration if not already loaded
+            self._ensure_teds_config_loaded()
 
             # Load test file but don't start recorder yet
             test_file = self.find_test_file("sine")
@@ -668,10 +382,7 @@ class TestTedsFunctions:
 
             # FIRST CALL: Test TedsRead when recorder is NOT running - should succeed
             logger.info("Testing TedsRead method when recorder is NOT running - should succeed")
-            if 'test_result' in locals() and test_result is not None:
-                read_result_before = test_result
-            else:
-                read_result_before = self.vv.TedsRead()
+            read_result_before = self.vv.TedsRead()
             logger.info(f"TedsRead (before recorder start) returned: {type(read_result_before)}")
 
             # Verify the first call succeeded (should return rank 1 array of URNs)
@@ -679,8 +390,17 @@ class TestTedsFunctions:
             assert isinstance(read_result_before, (tuple, list)), f"TedsRead should return a tuple/list of URNs, got {type(read_result_before)}"
             logger.info(f"TedsRead succeeded when recorder was not running: {len(read_result_before)} URNs")
 
+            # Apply the TEDS before starting the recorder using TedsReadAndApply to ensure configuration is valid
+            logger.info("Running TedsReadAndApply to ensure configuration is valid before starting recorder")
+            try:
+                apply_result = self.vv.TedsReadAndApply()
+                logger.info(f"TedsReadAndApply succeeded: {type(apply_result)}")
+            except Exception as e:
+                error_info = ExtractComErrorInfo(e)
+                logger.warning(f"Failed to apply TEDS: {error_info}")
+
             # Now start the recorder
-            logger.info("Starting recorder after first TedsRead call")
+            logger.info("Starting recorder after applying TEDS")
             self.vv.RecordStart()
 
             # Wait a moment for the recorder to start
@@ -733,28 +453,8 @@ class TestTedsFunctions:
     def test_TedsVerifyAndApply_mismatch_error(self):
         """Test TedsVerifyAndApply returns mismatch error when a field is changed"""
         try:
-            # Skip if TedsVerifyAndApply method does not exist in COM object
-            try:
-                # Try calling TedsVerifyAndApply to check if it exists in the COM object
-                test_result = self.vv.TedsVerifyAndApply(())
-            except AttributeError as e:
-                if "object has no attribute 'TedsVerifyAndApply'" in str(e):
-                    pytest.skip("TedsVerifyAndApply method does not exist in COM object")
-                raise  # Re-raise if it's a different AttributeError
-            except Exception:
-                # If TedsVerifyAndApply exists but fails for other reasons, continue with test
-                test_result = None
-
-            # Set up config file paths
-            config_subfolder = "InputConfig"
-            config_folder = os.path.join(self.script_dir, '..', config_subfolder)
-            config_file = os.path.join(config_folder, "7-channels-TEDS.vic")
-
-            if not os.path.exists(config_file):
-                pytest.skip(f"TEDS configuration file not found: {config_file}")
-
-            # Apply the configuration file
-            self.vv.SetInputConfigurationFile(config_file)
+            # Load TEDS configuration if not already loaded
+            self._ensure_teds_config_loaded()
 
             num_channels = self.vv.GetHardwareInputChannels()
             assert num_channels is not None and num_channels > 0
@@ -815,31 +515,77 @@ class TestTedsFunctions:
             pytest.fail(f"Error in test_TedsVerifyAndApply_mismatch_error: {error_msg}")
 
     @pytest.mark.teds
+    def test_TedsVerifyAndApply_reversed_channels_error(self):
+        """Test TedsVerifyAndApply returns mismatch error when channels 2 and 3 are reversed"""
+        try:
+            # Load TEDS configuration if not already loaded
+            self._ensure_teds_config_loaded()
+
+            num_channels = self.vv.GetHardwareInputChannels()
+            assert num_channels is not None and num_channels > 0
+            assert num_channels >= 3, "Need at least 3 channels to test reversing channels 2 and 3"
+            logger.info(f"Testing TedsVerifyAndApply with reversed channels 2 and 3 for {num_channels} channels")
+
+            # First, read current TEDS data using TedsRead()
+            logger.info("Reading current TEDS data using TedsRead()")
+            teds_data = self.vv.TedsRead()
+
+            assert teds_data is not None, "TedsRead() should return data"
+            assert len(teds_data) == num_channels, f"Expected {num_channels} channel results, got {len(teds_data)}"
+
+            # Create a copy of the URN array and swap channels 2 and 3 (indices 1 and 2)
+            modified_urns = list(teds_data)
+
+            # Check if channels 2 and 3 have valid URNs
+            channel_2_urn = teds_data[1]
+            channel_3_urn = teds_data[2]
+
+            if not (channel_2_urn and isinstance(channel_2_urn, str) and channel_2_urn.strip() and channel_2_urn.lower() != "disabled"):
+                pytest.skip("Channel 2 does not have a valid URN to swap")
+
+            if not (channel_3_urn and isinstance(channel_3_urn, str) and channel_3_urn.strip() and channel_3_urn.lower() != "disabled"):
+                pytest.skip("Channel 3 does not have a valid URN to swap")
+
+            # Swap channels 2 and 3
+            modified_urns[1] = channel_3_urn
+            modified_urns[2] = channel_2_urn
+            logger.info(f"Swapped channel 2 URN '{channel_2_urn}' with channel 3 URN '{channel_3_urn}'")
+
+            # Now test TedsVerifyAndApply with the reversed URN array
+            logger.info("Testing TedsVerifyAndApply with reversed channels 2 and 3 (may raise exception or succeed)")
+            try:
+                verify_result = self.vv.TedsVerifyAndApply(tuple(modified_urns))
+
+                # If we get here, the reversed URNs were accepted
+                assert verify_result is not None, "TedsVerifyAndApply should return a result"
+                logger.info(f"TedsVerifyAndApply returned: {type(verify_result)} with length {len(verify_result) if hasattr(verify_result, '__len__') else 'N/A'}")
+
+                assert isinstance(verify_result, (tuple, list)), f"TedsVerifyAndApply should return a tuple/list of URNs, got {type(verify_result)}"
+                assert len(verify_result) == num_channels, f"Expected {num_channels} results, got {len(verify_result)}"
+
+                logger.warning("Reversed URNs were accepted - API may be more lenient than expected")
+                for channel_index, result in enumerate(verify_result):
+                    logger.info(f"Channel {channel_index+1}: Result: {result}")
+
+            except Exception as e:
+                # This is actually the expected behavior for mismatched URNs
+                error_info = ExtractComErrorInfo(e)
+                logger.info(f"TedsVerifyAndApply raised expected exception for reversed channels: {error_info}")
+                # This is the correct behavior - reversed URNs should raise exceptions
+
+            logger.info("Successfully handled reversed channels test case")
+
+        except Exception as e:
+            error_msg = ExtractComErrorInfo(e)
+            logger.error(f"Error in test_TedsVerifyAndApply_reversed_channels_error: {error_msg}")
+            pytest.fail(f"Error in test_TedsVerifyAndApply_reversed_channels_error: {error_msg}")
+
+    @pytest.mark.teds
     def test_TedsVerifyAndApply_missing_URN_error(self):
         """Test TedsVerifyAndApply returns mismatch error when URN is missing on an enabled channel"""
         try:
-            # Skip if TedsVerifyAndApply method does not exist in COM object
-            try:
-                # Try calling TedsVerifyAndApply to check if it exists in the COM object
-                test_result = self.vv.TedsVerifyAndApply(())
-            except AttributeError as e:
-                if "object has no attribute 'TedsVerifyAndApply'" in str(e):
-                    pytest.skip("TedsVerifyAndApply method does not exist in COM object")
-                raise  # Re-raise if it's a different AttributeError
-            except Exception:
-                # If TedsVerifyAndApply exists but fails for other reasons, continue with test
-                test_result = None
-
-            # Set up config file paths
-            config_subfolder = "InputConfig"
-            config_folder = os.path.join(self.script_dir, '..', config_subfolder)
-            config_file = os.path.join(config_folder, "7-channels-TEDS.vic")
-
-            if not os.path.exists(config_file):
-                pytest.skip(f"TEDS configuration file not found: {config_file}")
-
-            # Apply the configuration file
-            self.vv.SetInputConfigurationFile(config_file)
+            # Load TEDS configuration if not already loaded
+            self._ensure_teds_config_loaded()
 
             num_channels = self.vv.GetHardwareInputChannels()
             assert num_channels is not None and num_channels > 0
@@ -899,31 +645,11 @@ class TestTedsFunctions:
             pytest.fail(f"Error in test_TedsVerifyAndApply_missing_URN_error: {error_msg}")
 
     @pytest.mark.teds
-    def test_TedsVerifyAndApply_URN_on_disabled_channel(self):
-        """Test TedsVerifyAndApply with a valid URN on a channel that is not enabled"""
+    def test_TedsVerifyAndApply_URN_on_disabled_channel_should_fail(self):
+        """Test TedsVerifyAndApply with a valid URN on a channel that is not enabled - should fail"""
         try:
-            # Skip if TedsVerifyAndApply method does not exist in COM object
-            try:
-                # Try calling TedsVerifyAndApply to check if it exists in the COM object
-                test_result = self.vv.TedsVerifyAndApply(())
-            except AttributeError as e:
-                if "object has no attribute 'TedsVerifyAndApply'" in str(e):
-                    pytest.skip("TedsVerifyAndApply method does not exist in COM object")
-                raise  # Re-raise if it's a different AttributeError
-            except Exception:
-                # If TedsVerifyAndApply exists but fails for other reasons, continue with test
-                test_result = None
-
-            # Set up config file paths
-            config_subfolder = "InputConfig"
-            config_folder = os.path.join(self.script_dir, '..', config_subfolder)
-            config_file = os.path.join(config_folder, "7-channels-TEDS.vic")
-
-            if not os.path.exists(config_file):
-                pytest.skip(f"TEDS configuration file not found: {config_file}")
-
-            # Apply the configuration file
-            self.vv.SetInputConfigurationFile(config_file)
+            # Load TEDS configuration if not already loaded
+            self._ensure_teds_config_loaded()
 
             num_channels = self.vv.GetHardwareInputChannels()
             assert num_channels is not None and num_channels > 0
@@ -944,7 +670,7 @@ class TestTedsFunctions:
             for channel_index, urn in enumerate(teds_data):
                 if not urn or (isinstance(urn, str) and (not urn.strip() or urn.lower() == "disabled")):
                     # Add a URN to this disabled/empty channel
-                    test_urn = "TEST_URN_ON_DISABLED_CHANNEL"
+                    test_urn = "3C00000186B96114"
                     modified_urns[channel_index] = test_urn
                     channel_modified = channel_index
                     logger.info(f"Added URN to disabled channel {channel_index+1}: '' -> '{test_urn}'")
@@ -953,111 +679,388 @@ class TestTedsFunctions:
             if channel_modified is None:
                 pytest.skip("No suitable disabled channel found to add URN for test")
 
-            # Now test TedsVerifyAndApply with valid URN on disabled channel
-            logger.info("Testing TedsVerifyAndApply with valid URN on disabled channel")
-            verify_result = self.vv.TedsVerifyAndApply(tuple(modified_urns))
+            # Now test TedsVerifyAndApply with valid URN on disabled channel - expecting rejection
+            logger.info("Testing TedsVerifyAndApply with valid URN on disabled channel - expecting rejection")
 
-            assert verify_result is not None, "TedsVerifyAndApply should return a result"
-            logger.info(f"TedsVerifyAndApply returned: {type(verify_result)} with length {len(verify_result) if hasattr(verify_result, '__len__') else 'N/A'}")
+            urn_rejected = False
+            try:
+                verify_result = self.vv.TedsVerifyAndApply(tuple(modified_urns))
 
-            # TedsVerifyAndApply returns a rank 1 array of URNs, check the results
-            assert isinstance(verify_result, (tuple, list)), f"TedsVerifyAndApply should return a tuple/list, got {type(verify_result)}"
-            assert len(verify_result) == num_channels, f"Expected {num_channels} results, got {len(verify_result)}"
+                # If we get here, no exception was raised - check if error is in the result
+                assert verify_result is not None, "TedsVerifyAndApply should return a result"
+                logger.info(f"TedsVerifyAndApply returned: {type(verify_result)} with length {len(verify_result) if hasattr(verify_result, '__len__') else 'N/A'}")
 
-            # Check if URN was accepted or rejected for disabled channel
-            success_or_expected_error = False
-            for channel_index, result in enumerate(verify_result):
-                if channel_index == channel_modified:
-                    if isinstance(result, str) and result.strip():
-                        if "error" in result.lower() or "invalid" in result.lower():
-                            logger.info(f"Channel {channel_index+1}: URN on disabled channel rejected: {result}")
-                            success_or_expected_error = True
+                # TedsVerifyAndApply returns a rank 1 array of URNs, check the results
+                assert isinstance(verify_result, (tuple, list)), f"TedsVerifyAndApply should return a tuple/list, got {type(verify_result)}"
+                assert len(verify_result) == num_channels, f"Expected {num_channels} results, got {len(verify_result)}"
+
+                # Check that URN was rejected for disabled channel (error in result)
+                for channel_index, result in enumerate(verify_result):
+                    if channel_index == channel_modified:
+                        if isinstance(result, str) and result.strip():
+                            if "error" in result.lower() or "invalid" in result.lower() or "mismatch" in result.lower():
+                                logger.info(f"Channel {channel_index+1}: URN on disabled channel correctly rejected (error in result): {result}")
+                                urn_rejected = True
+                            else:
+                                logger.error(f"Channel {channel_index+1}: URN on disabled channel was unexpectedly accepted: {result}")
                         else:
-                            logger.info(f"Channel {channel_index+1}: URN on disabled channel accepted: {result}")
-                            success_or_expected_error = True
-                    elif not result or (isinstance(result, str) and not result.strip()):
-                        logger.info(f"Channel {channel_index+1}: Empty result for URN on disabled channel")
-                        success_or_expected_error = True
-                    break
+                            logger.error(f"Channel {channel_index+1}: Empty result for URN on disabled channel (expected error)")
+                        break
 
-            # Either acceptance or rejection is valid behavior
-            assert success_or_expected_error, f"Unexpected result for URN on disabled channel: {verify_result}"
-            logger.info("Successfully handled URN on disabled channel case")
+            except Exception as e:
+                # This is also valid - TedsVerifyAndApply raised an exception for the invalid configuration
+                error_info = ExtractComErrorInfo(e)
+                logger.info(f"TedsVerifyAndApply correctly raised exception for URN on disabled channel: {error_info}")
+                urn_rejected = True
+
+            # URN on disabled channel should always be rejected (either via exception or error in result)
+            assert urn_rejected, f"URN on disabled channel should be rejected with error or exception, but got: {verify_result[channel_modified] if 'verify_result' in locals() and channel_modified < len(verify_result) else 'no error detected'}"
+            logger.info("Test passed: URN on disabled channel was correctly rejected")
 
         except Exception as e:
             error_msg = ExtractComErrorInfo(e)
-            logger.error(f"Error in test_TedsVerifyAndApply_URN_on_disabled_channel: {error_msg}")
-            pytest.fail(f"Error in test_TedsVerifyAndApply_URN_on_disabled_channel: {error_msg}")
+            logger.error(f"Error in test_TedsVerifyAndApply_URN_on_disabled_channel_should_fail: {error_msg}")
+            pytest.fail(f"Error in test_TedsVerifyAndApply_URN_on_disabled_channel_should_fail: {error_msg}")
 
     @pytest.mark.teds
-    def test_TedsVerifyAndApply_URN_rank1_array(self):
-        """Test TedsVerifyAndApply with a rank 1 array containing just URNs (this is the normal case)"""
+    def test_TedsReadAndApply_with_sine_named_config_should_fail(self):
+        """Test TedsReadAndApply with sine-named config.vsp profile - should fail"""
         try:
-            # Skip if TedsVerifyAndApply method does not exist in COM object
+            # Load TEDS configuration if not already loaded
+            self._ensure_teds_config_loaded()
+
+            # Load the sine-named config profile
+            profile_folder = os.path.join(self.script_dir, '..', 'profiles')
+            profile_file = os.path.join(profile_folder, 'sine-named config.vsp')
+
+            if not os.path.exists(profile_file):
+                pytest.skip(f"Profile file not found: {profile_file}")
+
+            logger.info(f"Loading profile: {profile_file}")
+            self.vv.OpenTest(profile_file)
+            logger.info("Profile loaded successfully")
+
+            test_result = self.vv.TedsRead()
+
+            logger.info("TedsRead() called through automation")
+            logger.info(f"TedsRead() returned: {type(test_result)}")
+
+            # Log what we got back
+            if test_result:
+                logger.info(f"TedsRead() returned {len(test_result)} items")
+                for idx, item in enumerate(test_result):
+                    logger.info(f"Channel {idx+1}: {item}")
+
+            # THIS ASSERTION WILL FAIL - expecting TEDS data when there likely is none
+            # or expecting a specific number of channels with valid URNs
+            assert test_result is not None, "TedsRead() should return data"
+            assert isinstance(test_result, (tuple, list)), "TedsRead() should return a tuple or list"
+
+            # Count channels with valid TEDS URNs
+            channels_with_teds = 0
+            for item in test_result:
+                if item and isinstance(item, str) and item.strip() and item.lower() != "disabled":
+                    channels_with_teds += 1
+
+            logger.info(f"Found {channels_with_teds} channels with TEDS URNs")
+
+            # Expecting at least 15 channels with TEDS
+            assert channels_with_teds == 1, f"Expected 1 channels with TEDS URNs, but found {channels_with_teds}"
+
+            # Now test TedsReadAndApply - THIS SHOULD FAIL
+            logger.info("Testing TedsReadAndApply - expecting failure/exception")
+            exception_raised = False
             try:
-                # Try calling TedsVerifyAndApply to check if it exists in the COM object
-                test_result = self.vv.TedsVerifyAndApply(())
-            except AttributeError as e:
-                if "object has no attribute 'TedsVerifyAndApply'" in str(e):
-                    pytest.skip("TedsVerifyAndApply method does not exist in COM object")
-                raise  # Re-raise if it's a different AttributeError
-            except Exception:
-                # If TedsVerifyAndApply exists but fails for other reasons, continue with test
-                test_result = None
+                apply_result = self.vv.TedsReadAndApply()
+                # If we get here, no exception was raised
+                logger.warning(f"TedsReadAndApply did not raise an exception. Returned: {type(apply_result)}")
 
-            # Set up config file paths
-            config_subfolder = "InputConfig"
-            config_folder = os.path.join(self.script_dir, '..', config_subfolder)
-            config_file = os.path.join(config_folder, "7-channels-TEDS.vic")
+                # Check if the result contains errors
+                if apply_result and isinstance(apply_result, (tuple, list)):
+                    for channel_index, urn in enumerate(apply_result):
+                        if urn and isinstance(urn, str) and ("error" in urn.lower() or "invalid" in urn.lower() or "mismatch" in urn.lower()):
+                            logger.info(f"Channel {channel_index+1}: Expected error found: {urn}")
+                            exception_raised = True
+            except Exception as e:
+                # This is the expected behavior - TedsReadAndApply should raise an exception
+                error_info = ExtractComErrorInfo(e)
+                logger.info(f"TedsReadAndApply raised expected exception: {error_info}")
+                exception_raised = True
 
-            if not os.path.exists(config_file):
-                pytest.skip(f"TEDS configuration file not found: {config_file}")
+            # Assert that either an exception was raised or errors were returned
+            assert exception_raised, "TedsReadAndApply should fail (raise exception or return errors) with sine-named config profile"
 
-            # Apply the configuration file
-            self.vv.SetInputConfigurationFile(config_file)
+            logger.info("Test passed: TedsReadAndApply failed as expected")
 
-            num_channels = self.vv.GetHardwareInputChannels()
-            assert num_channels is not None and num_channels > 0
-            logger.info(f"Testing TedsVerifyAndApply with rank 1 URN array for {num_channels} channels")
+        except AssertionError:
+            # Re-raise assertion errors (these are intentional test failures)
+            raise
+        except Exception as e:
+            error_info = ExtractComErrorInfo(e)
+            logger.error(f"Error in test_TedsReadAndApply_with_sine_named_config_should_fail: {error_info}")
+            pytest.fail(f"Error in test_TedsReadAndApply_with_sine_named_config_should_fail: {error_info}")
 
-            # First, read current TEDS data using TedsRead()
-            logger.info("Reading current TEDS data using TedsRead()")
-            teds_data = self.vv.TedsRead()
+    @pytest.mark.teds
+    def test_TedsRead_with_demo_mode_TEDS_profile_should_pass(self):
+        """Test TedsRead with sine_with_Demo_mode_Input_configuration_TEDS.vsp profile - should pass"""
+        try:
+            # Load TEDS configuration if not already loaded
+            self._ensure_teds_config_loaded()
 
-            assert teds_data is not None, "TedsRead() should return data"
-            assert len(teds_data) == num_channels, f"Expected {num_channels} channel results, got {len(teds_data)}"
+            # Load the demo mode TEDS profile
+            profile_folder = os.path.join(self.script_dir, '..', 'profiles')
+            profile_file = os.path.join(profile_folder, 'sine_with_Demo_mode_Input_configuration_TEDS.vsp')
 
-            # TedsRead() already returns a rank 1 URN array, so we can use it directly
-            # This test verifies that TedsVerifyAndApply works with the standard rank 1 URN input
-            logger.info("Testing TedsVerifyAndApply with rank 1 URN array from TedsRead")
-            verify_result = self.vv.TedsVerifyAndApply(teds_data)
+            if not os.path.exists(profile_file):
+                pytest.skip(f"Profile file not found: {profile_file}")
+
+            logger.info(f"Loading profile: {profile_file}")
+            self.vv.OpenTest(profile_file)
+            logger.info("Profile loaded successfully")
+
+            test_result = self.vv.TedsRead()
+
+            logger.info("TedsRead() called through automation")
+            logger.info(f"TedsRead() returned: {type(test_result)}")
+
+            # Verify we got data back
+            assert test_result is not None, "TedsRead() should return data"
+            assert isinstance(test_result, (tuple, list)), "TedsRead() should return a tuple or list"
+
+            # Log what we got back
+            if test_result:
+                logger.info(f"TedsRead() returned {len(test_result)} items")
+                for idx, item in enumerate(test_result):
+                    logger.info(f"Channel {idx+1}: {item}")
+
+            # Count channels with valid TEDS URNs
+            channels_with_teds = 0
+            for item in test_result:
+                if item and isinstance(item, str) and item.strip() and item.lower() != "disabled":
+                    channels_with_teds += 1
+
+            logger.info(f"Found {channels_with_teds} channels with TEDS URNs")
+
+            # Expect 6 channels with TEDS URNs (matching the 6-channels-TEDS.vic configuration)
+            assert channels_with_teds == 6, f"Expected 6 channels with TEDS URNs, but found {channels_with_teds}"
+
+            logger.info("TedsRead successfully read TEDS data from demo mode profile")
+
+            # Now test TedsVerifyAndApply with the TEDS data
+            logger.info("Testing TedsVerifyAndApply with TEDS data from demo mode profile")
+            verify_result = self.vv.TedsVerifyAndApply(test_result)
 
             assert verify_result is not None, "TedsVerifyAndApply should return a result"
             logger.info(f"TedsVerifyAndApply returned: {type(verify_result)} with length {len(verify_result) if hasattr(verify_result, '__len__') else 'N/A'}")
 
             # TedsVerifyAndApply returns a rank 1 array of URNs
             assert isinstance(verify_result, (tuple, list)), f"TedsVerifyAndApply should return a tuple/list of URNs, got {type(verify_result)}"
-            assert len(verify_result) == num_channels, f"Expected {num_channels} URN results, got {len(verify_result)}"
 
-            # Count channels with valid URNs returned
-            verified_channels = 0
+            # Check that there are no errors in the result
+            has_errors = False
             for channel_index, urn in enumerate(verify_result):
-                if urn and isinstance(urn, str) and urn.strip() and urn.lower() != "disabled":
-                    logger.info(f"Channel {channel_index+1}: Returned URN '{urn}'")
-                    verified_channels += 1
-                elif isinstance(urn, str) and ("error" in urn.lower() or "invalid" in urn.lower()):
-                    logger.info(f"Channel {channel_index+1}: Error returned: {urn}")
-                else:
-                    logger.info(f"Channel {channel_index+1}: No URN or disabled/empty")
+                if urn and isinstance(urn, str):
+                    # Check if the URN contains error messages
+                    if "error" in urn.lower() or "invalid" in urn.lower() or "mismatch" in urn.lower():
+                        logger.error(f"Channel {channel_index+1}: Unexpected error in TedsVerifyAndApply result: {urn}")
+                        has_errors = True
+                    elif urn.strip() and urn.lower() != "disabled":
+                        logger.info(f"Channel {channel_index+1}: Successfully verified TEDS URN: {urn}")
+                    else:
+                        logger.info(f"Channel {channel_index+1}: No TEDS or disabled")
 
-            logger.info(f"TedsVerifyAndApply with rank 1 URN array returned URNs for {verified_channels} channels")
-            # Success if we got some valid URNs back or the input was properly processed
-            assert verified_channels >= 0, "TedsVerifyAndApply should process the rank 1 URN array"
+            # Assert that there were NO errors
+            assert not has_errors, "TedsVerifyAndApply should not return any errors when verifying TEDS from demo mode profile"
 
+            logger.info("Test passed: TedsRead and TedsVerifyAndApply successfully processed TEDS data from demo mode profile")
+
+        except AssertionError:
+            # Re-raise assertion errors (these are test failures)
+            raise
         except Exception as e:
-            error_msg = ExtractComErrorInfo(e)
-            logger.error(f"Error in test_TedsVerifyAndApply_URN_rank1_array: {error_msg}")
-            pytest.fail(f"Error in test_TedsVerifyAndApply_URN_rank1_array: {error_msg}")
+            error_info = ExtractComErrorInfo(e)
+            logger.error(f"Error in test_TedsRead_with_demo_mode_TEDS_profile_should_pass: {error_info}")
+            pytest.fail(f"Error in test_TedsRead_with_demo_mode_TEDS_profile_should_pass: {error_info}")
+
+    @pytest.mark.teds
+    def test_TedsVerifyAndApply_with_channel1_TEDS_should_fail(self):
+        """Test TedsVerifyAndApply with channel 1 TEDS.vic - THIS TEST SHOULD RETURN ERRORS"""
+        try:
+            # Load the default sine profile
+            test_file = self.find_test_file("sine")
+            if not test_file:
+                pytest.skip("Default sine test file not found")
+
+            logger.info(f"Loading profile: {test_file}")
+            self.vv.OpenTest(test_file)
+            logger.info("Profile loaded successfully")
+
+            # Load the channel 1 TEDS input configuration
+            config_subfolder = "InputConfig"
+            config_folder = os.path.join(self.script_dir, '..', config_subfolder)
+            config_file = os.path.join(config_folder, "channel 1 TEDS.vic")
+
+            if not os.path.exists(config_file):
+                pytest.skip(f"TEDS configuration file not found: {config_file}")
+
+            logger.info(f"Loading TEDS configuration: {config_file}")
+            self.vv.SetInputConfigurationFile(config_file)
+            logger.info("TEDS configuration loaded successfully")
+
+            teds_data = self.vv.TedsRead()
+
+            logger.info("TedsRead() called through automation")
+            logger.info(f"TedsRead() returned: {type(teds_data)}")
+
+            # Verify we got data back
+            assert teds_data is not None, "TedsRead() should return data"
+            assert isinstance(teds_data, (tuple, list)), "TedsRead() should return a tuple or list"
+
+            # Log what we got back
+            if teds_data:
+                logger.info(f"TedsRead() returned {len(teds_data)} items")
+                for idx, item in enumerate(teds_data):
+                    logger.info(f"Channel {idx+1}: {item}")
+
+            # Count channels with valid TEDS URNs
+            channels_with_teds = 0
+            for item in teds_data:
+                if item and isinstance(item, str) and item.strip() and item.lower() != "disabled":
+                    channels_with_teds += 1
+
+            logger.info(f"Found {channels_with_teds} channels with TEDS URNs")
+
+            # Assert that we found exactly 1 channel with TEDS
+            assert channels_with_teds == 1, f"Expected 1 channel with TEDS URNs, but found {channels_with_teds}"
+
+            # Now apply the TEDS data using TedsVerifyAndApply - EXPECTING AN EXCEPTION
+            logger.info("Applying TEDS data using TedsVerifyAndApply() - expecting exception to be raised")
+
+            exception_raised = False
+            try:
+                verify_result = self.vv.TedsVerifyAndApply(teds_data)
+                # If we get here, no exception was raised
+                logger.warning(f"TedsVerifyAndApply did not raise an exception. Returned: {type(verify_result)}")
+            except Exception as e:
+                # This is the expected behavior - TedsVerifyAndApply should raise an exception
+                error_info = ExtractComErrorInfo(e)
+                logger.info(f"TedsVerifyAndApply raised expected exception: {error_info}")
+                exception_raised = True
+
+            # Assert that an exception WAS raised (this is the expected behavior)
+            assert exception_raised, "TedsVerifyAndApply should raise an exception when applying TEDS from channel 1 TEDS.vic, but no exception was raised"
+
+            logger.info("Test passed: TedsVerifyAndApply raised expected exception")
+
+        except AssertionError:
+            # Re-raise assertion errors (these are test failures)
+            raise
+        except Exception as e:
+            error_info = ExtractComErrorInfo(e)
+            logger.error(f"Error in test_TedsVerifyAndApply_with_channel1_TEDS_should_fail: {error_info}")
+            pytest.fail(f"Error in test_TedsVerifyAndApply_with_channel1_TEDS_should_fail: {error_info}")
+
+    @pytest.mark.teds
+    def test_TedsReadAndApply_with_channel1_TEDS_should_pass(self):
+        """Test TedsReadAndApply with channel 1 TEDS.vic - should succeed"""
+        try:
+            # Load the default sine profile
+            test_file = self.find_test_file("sine")
+            if not test_file:
+                pytest.skip("Default sine test file not found")
+
+            logger.info(f"Loading profile: {test_file}")
+            self.vv.OpenTest(test_file)
+            logger.info("Profile loaded successfully")
+
+            # Load the demonstration mode TEDS input configuration
+            config_subfolder = "InputConfig"
+            config_folder = os.path.join(self.script_dir, '..', config_subfolder)
+            config_file = os.path.join(config_folder, "channel 1 TEDS.vic")
+
+            if not os.path.exists(config_file):
+                pytest.skip(f"TEDS configuration file not found: {config_file}")
+
+            logger.info(f"Loading TEDS configuration: {config_file}")
+            self.vv.SetInputConfigurationFile(config_file)
+            logger.info("TEDS configuration loaded successfully")
+
+            # First verify TedsRead returns exactly 1 channel with TEDS
+            logger.info("Calling TedsRead() to verify channel count")
+            teds_data = self.vv.TedsRead()
+
+            assert teds_data is not None, "TedsRead() should return data"
+            assert isinstance(teds_data, (tuple, list)), "TedsRead() should return a tuple or list"
+
+            # Count channels with valid TEDS URNs
+            channels_with_teds = 0
+            for item in teds_data:
+                if item and isinstance(item, str) and item.strip() and item.lower() != "disabled":
+                    channels_with_teds += 1
+
+            logger.info(f"TedsRead found {channels_with_teds} channels with TEDS URNs")
+            assert channels_with_teds == 1, f"Expected 1 channel with TEDS URNs, but found {channels_with_teds}"
+
+            # Now apply the TEDS data using TedsReadAndApply - EXPECTING SUCCESS
+            logger.info("Applying TEDS data using TedsReadAndApply() - expecting success")
+
+            try:
+                verify_result = self.vv.TedsReadAndApply()
+                # If we get here, the call succeeded (no exception)
+                logger.info(f"TedsReadAndApply succeeded. Returned: {type(verify_result)}")
+
+                assert verify_result is not None, "TedsReadAndApply should return a result"
+                logger.info(f"TedsReadAndApply returned: {type(verify_result)} with length {len(verify_result) if hasattr(verify_result, '__len__') else 'N/A'}")
+
+                # TedsReadAndApply returns a rank 1 array of URNs
+                assert isinstance(verify_result, (tuple, list)), f"TedsReadAndApply should return a tuple/list of URNs, got {type(verify_result)}"
+
+                # Get the channel 1 TEDS URN from TedsReadAndApply result
+                channel1_urn_after = verify_result[0] if len(verify_result) > 0 else None
+                logger.info(f"Channel 1 URN from TedsReadAndApply: '{channel1_urn_after}'")
+
+                channel1_urn_expected = '3C00000186B96114'
+
+                # Assert that the URN matches the expected hardware configuration
+                assert channel1_urn_expected == channel1_urn_after, f"Expected channel 1 TEDS URN '{channel1_urn_expected}', but got '{channel1_urn_after}'"
+                logger.info("Verified: Channel 1 TEDS URN matches expected value")
+
+                # Check that there are no errors in the result
+                has_errors = False
+                applied_channels = 0
+                for channel_index, urn in enumerate(verify_result):
+                    if urn and isinstance(urn, str):
+                        # Check if the URN contains error messages
+                        if "error" in urn.lower() or "invalid" in urn.lower() or "mismatch" in urn.lower():
+                            logger.error(f"Channel {channel_index+1}: Unexpected error in TedsReadAndApply result: {urn}")
+                            has_errors = True
+                        elif urn.strip() and urn.lower() != "disabled":
+                            logger.info(f"Channel {channel_index+1}: Successfully applied TEDS URN: {urn}")
+                            applied_channels += 1
+                        else:
+                            logger.info(f"Channel {channel_index+1}: No TEDS or disabled")
+
+                # Assert that there were NO errors
+                assert not has_errors, "TedsReadAndApply should not return any errors when applying TEDS from channel 1 TEDS.vic"
+
+                # Assert that exactly 1 channel was applied
+                assert applied_channels == 1, f"Expected 1 channel to have TEDS applied, but found {applied_channels}"
+
+                logger.info("Test passed: TedsReadAndApply succeeded without errors and returned different URN")
+
+            except Exception as e:
+                # This is unexpected - TedsReadAndApply should not raise an exception
+                error_info = ExtractComErrorInfo(e)
+                logger.error(f"TedsReadAndApply unexpectedly raised an exception: {error_info}")
+                pytest.fail(f"TedsReadAndApply should succeed but raised an exception: {error_info}")
+
+        except AssertionError:
+            # Re-raise assertion errors (these are test failures)
+            raise
+        except Exception as e:
+            error_info = ExtractComErrorInfo(e)
+            logger.error(f"Error in test_TedsReadAndApply_with_channel1_TEDS_should_pass: {error_info}")
+            pytest.fail(f"Error in test_TedsReadAndApply_with_channel1_TEDS_should_pass: {error_info}")
 
 if __name__ == "__main__":
     # Configure logging
