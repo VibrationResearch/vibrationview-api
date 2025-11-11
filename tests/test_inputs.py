@@ -454,13 +454,111 @@ class TestInputConfiguration:
             logger.info(f"Channel {channel_index} InputDifferential False: PASS")
             
             logger.info("InputDifferential set/read consistency test completed successfully")
-                
+
         except Exception as e:
             error_info = ExtractComErrorInfo(e)
             logger.error(f"Error in test_input_differential_set_read_consistency: {error_info}")
             pytest.fail(f"Error in test_input_differential_set_read_consistency: {error_info}")
 
-    
+    @pytest.mark.config
+    def test_profile_with_forced_input_configuration_should_fail(self):
+        """Test profile with forced input configuration - should fail"""
+        try:
+            # Load the sine-named config profile first
+            profile_folder = os.path.join(self.script_dir, '..', 'profiles')
+            profile_file = os.path.join(profile_folder, 'sine-named config.vsp')
+
+            if not os.path.exists(profile_file):
+                pytest.skip(f"Profile file not found: {profile_file}")
+
+            logger.info(f"Loading profile: {profile_file}")
+            self.vv.OpenTest(profile_file)
+            logger.info("Profile loaded successfully")
+
+            # Set up config file paths
+            config_subfolder = "InputConfig"
+            config_folder = os.path.join(self.script_dir, '..', config_subfolder)
+
+            # Skip test if config folder doesn't exist
+            if not os.path.exists(config_folder):
+                logger.warning(f"Configuration folder not found: {config_folder}")
+                pytest.skip(f"Configuration folder not found: {config_folder}")
+
+            # Find test configuration file
+            config_file = os.path.join(config_folder, "10mV per G.vic")
+            if not os.path.exists(config_file):
+                logger.warning(f"Configuration file not found: {config_file}")
+                pytest.skip(f"Configuration file not found: {config_file}")
+
+            # Try to apply the configuration file - EXPECTING THIS TO FAIL
+            logger.info(f"Attempting to apply configuration file: {config_file}")
+            exception_raised = False
+
+            try:
+                self.vv.SetInputConfigurationFile(config_file)
+                logger.info("Configuration file applied - checking if it should have failed")
+
+                # If we get here, the configuration was applied
+                # Get number of hardware channels and verify basic properties
+                num_channels = self.vv.GetHardwareInputChannels()
+                assert num_channels is not None and num_channels > 0
+                logger.info(f"Testing configuration for {num_channels} channels")
+
+                # Verify a sample of channels (first, middle, last)
+                channels_to_check = [0]  # Always check first channel
+                if num_channels > 2:
+                    channels_to_check.append(num_channels // 2)  # Middle channel
+                if num_channels > 1:
+                    channels_to_check.append(min(num_channels - 1, 15))  # Last channel (max 16)
+
+                # Check if any channel has issues
+                failed_channels = []
+                for channel_index in channels_to_check:
+                    logger.info(f"Checking basic properties of channel {channel_index+1}")
+
+                    try:
+                        # Get channel properties
+                        label = self.vv.ChannelLabel(channel_index)
+                        unit = self.vv.ChannelUnit(channel_index)
+                        sensitivity = self.vv.InputSensitivity(channel_index)
+
+                        logger.info(f"Channel {channel_index+1} properties: label={label}, unit={unit}, sensitivity={sensitivity}")
+
+                        # Check if properties are valid
+                        if label is None or unit is None or sensitivity is None:
+                            failed_channels.append(channel_index + 1)
+                            logger.warning(f"Channel {channel_index+1} has invalid properties")
+                    except Exception as e:
+                        error_info = ExtractComErrorInfo(e)
+                        logger.warning(f"Failed to read channel {channel_index+1} properties: {error_info}")
+                        failed_channels.append(channel_index + 1)
+
+                if failed_channels:
+                    logger.info(f"Configuration check detected issues with channels: {failed_channels}")
+                    exception_raised = True
+                else:
+                    # Configuration was applied successfully with no issues detected
+                    logger.error("SetInputConfigurationFile succeeded and all channels appear valid - expected this to fail")
+                    pytest.fail("SetInputConfigurationFile should fail with sine-named config profile and 10mV per G.vic, but succeeded")
+
+            except Exception as e:
+                # This is the expected behavior - SetInputConfigurationFile should fail
+                error_info = ExtractComErrorInfo(e)
+                logger.info(f"SetInputConfigurationFile correctly raised exception: {error_info}")
+                exception_raised = True
+
+            # Assert that an exception was raised or configuration had issues
+            assert exception_raised, "SetInputConfigurationFile should fail or have channel issues with sine-named config profile and 10mV per G.vic"
+            logger.info("Test passed: Configuration correctly failed with sine-named config profile and 10mV per G.vic")
+
+        except AssertionError:
+            # Re-raise assertion errors (these are test failures)
+            raise
+        except Exception as e:
+            error_msg = ExtractComErrorInfo(e)
+            logger.error(f"Error in test_profile_with_forced_input_configuration_should_fail: {error_msg}")
+            pytest.fail(f"Error in test_profile_with_forced_input_configuration_should_fail: {error_msg}")
+
     def _apply_final_configuration(self, config_folder):
         """Apply the final configuration file"""
         try:
