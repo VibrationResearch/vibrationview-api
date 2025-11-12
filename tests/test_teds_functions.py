@@ -1031,6 +1031,10 @@ class TestTedsFunctions:
             logger.info(f"TedsRead found {channels_with_teds} channels with TEDS URNs")
             assert channels_with_teds == 1, f"Expected 1 channel with TEDS URNs, but found {channels_with_teds}"
 
+            # Get the InputSensitivity for channel 1 BEFORE TedsReadAndApply
+            sensitivity_before = self.vv.InputSensitivity(0)  # Channel 1 is index 0
+            logger.info(f"Channel 1 InputSensitivity BEFORE TedsReadAndApply: {sensitivity_before}")
+
             # Now apply the TEDS data using TedsReadAndApply - EXPECTING SUCCESS
             logger.info("Applying TEDS data using TedsReadAndApply() - expecting success")
 
@@ -1076,7 +1080,15 @@ class TestTedsFunctions:
                 # Assert that exactly 1 channel was applied
                 assert applied_channels == 1, f"Expected 1 channel to have TEDS applied, but found {applied_channels}"
 
-                logger.info("Test passed: TedsReadAndApply succeeded without errors and returned different URN")
+                # Get the InputSensitivity for channel 1 AFTER TedsReadAndApply
+                sensitivity_after = self.vv.InputSensitivity(0)  # Channel 1 is index 0
+                logger.info(f"Channel 1 InputSensitivity AFTER TedsReadAndApply: {sensitivity_after}")
+
+                # Verify that the sensitivity changed
+                assert sensitivity_before != sensitivity_after, f"Channel 1 InputSensitivity should change after TedsReadAndApply, but remained {sensitivity_before}"
+                logger.info(f"Verified: Channel 1 InputSensitivity changed from {sensitivity_before} to {sensitivity_after}")
+
+                logger.info("Test passed: TedsReadAndApply succeeded without errors and changed InputSensitivity")
 
             except Exception as e:
                 # This is unexpected - TedsReadAndApply should not raise an exception
