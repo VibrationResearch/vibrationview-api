@@ -795,9 +795,21 @@ class TestTedsFunctions:
             logger.error(f"Error in test_TedsReadAndApply_with_sine_named_config_should_fail: {error_info}")
             pytest.fail(f"Error in test_TedsReadAndApply_with_sine_named_config_should_fail: {error_info}")
         finally:
-            # Reload default TEDS configuration
+            # Reload default profile and TEDS configuration
             try:
-                logger.info("Reloading default TEDS configuration")
+                logger.info("Reloading default profile and TEDS configuration")
+
+                # Reload default sine profile
+                profile_folder = os.path.join(self.script_dir, '..', 'profiles')
+                default_profile = os.path.join(profile_folder, 'sine.vsp')
+
+                if os.path.exists(default_profile):
+                    self.vv.OpenTest(default_profile)
+                    logger.info("Default sine profile reloaded successfully")
+                else:
+                    logger.warning(f"Default profile not found: {default_profile}")
+
+                # Reload default TEDS configuration
                 config_subfolder = "InputConfig"
                 config_folder = os.path.join(self.script_dir, '..', config_subfolder)
                 config_file = os.path.join(config_folder, TestTedsFunctions.teds_config_file)
@@ -809,7 +821,7 @@ class TestTedsFunctions:
                     logger.warning(f"Default TEDS configuration file not found: {config_file}")
             except Exception as e:
                 error_info = ExtractComErrorInfo(e)
-                logger.warning(f"Failed to reload default TEDS configuration: {error_info}")
+                logger.warning(f"Failed to reload defaults: {error_info}")
 
     @pytest.mark.teds
     def test_TedsRead_with_demo_mode_TEDS_profile_should_pass(self):
@@ -991,15 +1003,6 @@ class TestTedsFunctions:
     def test_TedsReadAndApply_with_channel1_TEDS_should_pass(self):
         """Test TedsReadAndApply with channel 1 TEDS.vic - should succeed"""
         try:
-            # Load the default sine profile
-            test_file = self.find_test_file("sine")
-            if not test_file:
-                pytest.skip("Default sine test file not found")
-
-            logger.info(f"Loading profile: {test_file}")
-            self.vv.OpenTest(test_file)
-            logger.info("Profile loaded successfully")
-
             # Load the demonstration mode TEDS input configuration
             config_subfolder = "InputConfig"
             config_folder = os.path.join(self.script_dir, '..', config_subfolder)
