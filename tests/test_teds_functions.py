@@ -434,20 +434,18 @@ class TestTedsFunctions:
 
         except AssertionError:
             # Re-raise assertion errors (these are test failures)
-            try:
-                self.vv.RecordStop()
-            except:
-                pass
             raise
         except Exception as e:
-            # Ensure recorder is stopped in case of unexpected error
-            try:
-                self.vv.RecordStop()
-            except:
-                pass
             error_info = ExtractComErrorInfo(e)
             logger.error(f"Unexpected error in test_TedsRead_before_and_during_recorder: {error_info}")
             pytest.fail(f"Unexpected error in test_TedsRead_before_and_during_recorder: {error_info}")
+        finally:
+            # Ensure recorder is stopped
+            try:
+                self.vv.RecordStop()
+                logger.info("Recorder stopped in finally block")
+            except:
+                pass
 
     @pytest.mark.teds
     def test_TedsVerifyAndApply_mismatch_error(self):

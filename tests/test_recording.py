@@ -88,6 +88,13 @@ class TestRecording:
             error_info = ExtractComErrorInfo(e)
             logger.error(f"Error in recording functions: {error_info}")
             pytest.fail(f"Error in recording functions: {error_info}")
+        finally:
+            # Ensure recorder is stopped
+            try:
+                self.vv.RecordStop()
+                logger.info("Recorder stopped in finally block")
+            except:
+                pass
     
     @pytest.mark.recording
     def test_recording_with_test_running(self):
@@ -147,8 +154,15 @@ class TestRecording:
             error_info = ExtractComErrorInfo(e)
             logger.error(f"Error in recording with test running: {error_info}")
             pytest.fail(f"Error in recording with test running: {error_info}")
-            
-            # Ensure test is stopped if an error occurs
+        finally:
+            # Ensure recorder is stopped
+            try:
+                self.vv.RecordStop()
+                logger.info("Recorder stopped in finally block")
+            except:
+                pass
+
+            # Ensure test is stopped
             try:
                 if self.vv.IsRunning():
                     self.vv.StopTest()
