@@ -1131,6 +1131,144 @@ class TestTedsFunctions:
             logger.error(f"Error in test_TedsReadAndApply_with_channel1_TEDS_should_pass: {error_info}")
             pytest.fail(f"Error in test_TedsReadAndApply_with_channel1_TEDS_should_pass: {error_info}")
 
+    @pytest.mark.teds
+    def test_TedsReadAndApply_output_voltage_comparison(self):
+        """Test TedsReadAndApply effect on OutputVoltage - comparing with and without TEDS applied"""
+        try:
+            # Define config folder for later use
+            config_subfolder = "InputConfig"
+            config_folder = os.path.join(self.script_dir, '..', config_subfolder)
+
+            # Step 1: Load '10mV per G.vic'
+            config_file_without_teds = "10mV per G.vic"
+
+            logger.info(f"Loading configuration: {config_file_without_teds}")
+            self.vv.SetInputConfigurationFile(config_file_without_teds)
+            logger.info("Configuration loaded successfully")
+
+            # Step 2: Load default sine test
+            test_file = self.find_test_file("sine")
+            if not test_file:
+                pytest.skip("Test file 'sine' not found")
+
+            logger.info(f"Loading test file: {test_file}")
+            self.vv.OpenTest(test_file)
+
+            # Step 3: Run the loaded test
+            logger.info("Starting test with configuration without TEDS")
+            self.vv.StartTest()
+
+            # Step 4: Wait until running at level + 2 seconds
+            logger.info("Waiting for test to be running at level")
+            # Wait for test to be running
+            running = self.wait_for_condition(self.vv.IsRunning, wait_time=10)
+            if not running:
+                pytest.fail("Test did not enter running state within timeout")
+
+            # Wait for test to no longer be starting (means it's at level)
+            not_starting = self.wait_for_not(self.vv.IsStarting, wait_time=10)
+            if not_starting == False:  # not_starting is False when IsStarting becomes False
+                logger.info("Test is now running at level")
+            else:
+                logger.warning("Test may still be starting")
+
+            # Additional 2 seconds after reaching level
+            time.sleep(2)
+
+            # Step 5: Read OutputVoltage%g field
+            output_voltage_without_teds_str = self.vv.ReportField("OutputVoltage%g")
+            logger.info(f"OutputVoltage%g (without TEDS): {output_voltage_without_teds_str}")
+
+            # Convert string to float
+            assert output_voltage_without_teds_str is not None, "OutputVoltage%g should return a value"
+            output_voltage_without_teds = float(output_voltage_without_teds_str)
+
+            # Assert value should be 0.010 with 0.1% tolerance
+            expected_value = 0.010
+            tolerance = expected_value * 0.001  # 0.1% relative error
+            assert abs(output_voltage_without_teds - expected_value) < tolerance, f"Expected OutputVoltage%g to be {expected_value} ± {tolerance}, but got {output_voltage_without_teds}"
+            logger.info(f"Verified: OutputVoltage%g matches expected value {expected_value} within 0.1% tolerance")
+
+            # Step 6: Stop the test
+            logger.info("Stopping test")
+            self.vv.StopTest()
+
+            # Wait for test to stop
+            time.sleep(1)
+
+            # Step 7: Load input configuration 'channel 1 TEDS.vic'
+            config_file_with_teds = os.path.join(config_folder, "channel 1 TEDS.vic")
+
+            if not os.path.exists(config_file_with_teds):
+                pytest.skip(f"Configuration file not found: {config_file_with_teds}")
+
+            logger.info(f"Loading configuration with TEDS: {config_file_with_teds}")
+            self.vv.SetInputConfigurationFile(config_file_with_teds)
+            logger.info("Configuration with TEDS loaded successfully")
+
+            # Step 8: TedsReadAndApply
+            logger.info("Calling TedsReadAndApply")
+            teds_result = self.vv.TedsReadAndApply()
+            logger.info(f"TedsReadAndApply returned: {teds_result}")
+
+            # Step 9: Run the loaded test
+            logger.info("Starting test with TEDS applied")
+            self.vv.StartTest()
+
+            # Step 10: Wait until running at level + 2 seconds
+            logger.info("Waiting for test to be running at level")
+            # Wait for test to be running
+            running = self.wait_for_condition(self.vv.IsRunning, wait_time=10)
+            if not running:
+                pytest.fail("Test did not enter running state within timeout")
+
+            # Wait for test to no longer be starting (means it's at level)
+            not_starting = self.wait_for_not(self.vv.IsStarting, wait_time=10)
+            if not_starting == False:  # not_starting is False when IsStarting becomes False
+                logger.info("Test is now running at level")
+            else:
+                logger.warning("Test may still be starting")
+
+            # Additional 2 seconds after reaching level
+            time.sleep(2)
+
+            # Step 11: Read OutputVoltage%g field
+            output_voltage_with_teds_str = self.vv.ReportField("OutputVoltage%g")
+            logger.info(f"OutputVoltage%g (with TEDS applied): {output_voltage_with_teds_str}")
+
+            # Convert string to float
+            assert output_voltage_with_teds_str is not None, "OutputVoltage%g should return a value"
+            output_voltage_with_teds = float(output_voltage_with_teds_str)
+
+            # Assert value should be 0.10198 with 0.1% tolerance
+            expected_value = 0.10198
+            tolerance = expected_value * 0.001  # 0.1% relative error
+            assert abs(output_voltage_with_teds - expected_value) < tolerance, f"Expected OutputVoltage%g to be {expected_value} ± {tolerance}, but got {output_voltage_with_teds}"
+            logger.info(f"Verified: OutputVoltage%g matches expected value {expected_value} within 0.1% tolerance")
+
+            # Step 12: Stop the test
+            logger.info("Stopping test")
+            self.vv.StopTest()
+
+            logger.info("Test passed: OutputVoltage%g changed correctly after TedsReadAndApply")
+            logger.info(f"Without TEDS: {output_voltage_without_teds}, With TEDS: {output_voltage_with_teds}")
+
+        except AssertionError:
+            # Re-raise assertion errors (these are test failures)
+            raise
+        except Exception as e:
+            error_info = ExtractComErrorInfo(e)
+            logger.error(f"Error in test_TedsReadAndApply_output_voltage_comparison: {error_info}")
+            pytest.fail(f"Error in test_TedsReadAndApply_output_voltage_comparison: {error_info}")
+        finally:
+            # Ensure test is stopped
+            try:
+                if self.vv.IsRunning():
+                    self.vv.StopTest()
+                    logger.info("Test stopped in finally block")
+            except:
+                pass
+
 if __name__ == "__main__":
     # Configure logging
     logging.basicConfig(
