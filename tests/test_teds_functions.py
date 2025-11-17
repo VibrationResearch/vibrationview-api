@@ -922,19 +922,10 @@ class TestTedsFunctions:
                 logger.warning(f"Failed to reload default TEDS configuration: {error_info}")
 
     @pytest.mark.teds
-    def test_TedsVerifyAndApply_with_channel1_TEDS_should_fail(self):
-        """Test TedsVerifyAndApply with channel 1 TEDS.vic - THIS TEST SHOULD RETURN ERRORS"""
+    def test_TedsVerifyAndApply_with_channel1_TEDS_should_pass(self):
+        """Test TedsVerifyAndApply with channel 1 TEDS.vic - should succeed"""
         try:
-            # Load the default sine profile
-            test_file = self.find_test_file("sine")
-            if not test_file:
-                pytest.skip("Default sine test file not found")
-
-            logger.info(f"Loading profile: {test_file}")
-            self.vv.OpenTest(test_file)
-            logger.info("Profile loaded successfully")
-
-            # Load the channel 1 TEDS input configuration
+            # Load the demonstration mode TEDS input configuration
             config_subfolder = "InputConfig"
             config_folder = os.path.join(self.script_dir, '..', config_subfolder)
             config_file = os.path.join(config_folder, "channel 1 TEDS.vic")
@@ -946,20 +937,12 @@ class TestTedsFunctions:
             self.vv.SetInputConfigurationFile(config_file)
             logger.info("TEDS configuration loaded successfully")
 
+            # First verify TedsRead returns exactly 1 channel with TEDS
+            logger.info("Calling TedsRead() to verify channel count")
             teds_data = self.vv.TedsRead()
 
-            logger.info("TedsRead() called through automation")
-            logger.info(f"TedsRead() returned: {type(teds_data)}")
-
-            # Verify we got data back
             assert teds_data is not None, "TedsRead() should return data"
             assert isinstance(teds_data, (tuple, list)), "TedsRead() should return a tuple or list"
-
-            # Log what we got back
-            if teds_data:
-                logger.info(f"TedsRead() returned {len(teds_data)} items")
-                for idx, item in enumerate(teds_data):
-                    logger.info(f"Channel {idx+1}: {item}")
 
             # Count channels with valid TEDS URNs
             channels_with_teds = 0
@@ -967,37 +950,81 @@ class TestTedsFunctions:
                 if item and isinstance(item, str) and item.strip() and item.lower() != "disabled":
                     channels_with_teds += 1
 
-            logger.info(f"Found {channels_with_teds} channels with TEDS URNs")
-
-            # Assert that we found exactly 1 channel with TEDS
+            logger.info(f"TedsRead found {channels_with_teds} channels with TEDS URNs")
             assert channels_with_teds == 1, f"Expected 1 channel with TEDS URNs, but found {channels_with_teds}"
 
-            # Now apply the TEDS data using TedsVerifyAndApply - EXPECTING AN EXCEPTION
-            logger.info("Applying TEDS data using TedsVerifyAndApply() - expecting exception to be raised")
+            # Get the InputSensitivity for channel 1 BEFORE TedsVerifyAndApply
+            sensitivity_before = self.vv.InputSensitivity(0)  # Channel 1 is index 0
+            logger.info(f"Channel 1 InputSensitivity BEFORE TedsVerifyAndApply: {sensitivity_before}")
 
-            exception_raised = False
+            # Now apply the TEDS data using TedsVerifyAndApply - EXPECTING SUCCESS
+            logger.info("Applying TEDS data using TedsVerifyAndApply() - expecting success")
+
             try:
                 verify_result = self.vv.TedsVerifyAndApply(teds_data)
-                # If we get here, no exception was raised
-                logger.warning(f"TedsVerifyAndApply did not raise an exception. Returned: {type(verify_result)}")
+                # If we get here, the call succeeded (no exception)
+                logger.info(f"TedsVerifyAndApply succeeded. Returned: {type(verify_result)}")
+
+                assert verify_result is not None, "TedsVerifyAndApply should return a result"
+                logger.info(f"TedsVerifyAndApply returned: {type(verify_result)} with length {len(verify_result) if hasattr(verify_result, '__len__') else 'N/A'}")
+
+                # TedsVerifyAndApply returns a rank 1 array of URNs
+                assert isinstance(verify_result, (tuple, list)), f"TedsVerifyAndApply should return a tuple/list of URNs, got {type(verify_result)}"
+
+                # Get the channel 1 TEDS URN from TedsVerifyAndApply result
+                channel1_urn_after = verify_result[0] if len(verify_result) > 0 else None
+                logger.info(f"Channel 1 URN from TedsVerifyAndApply: '{channel1_urn_after}'")
+
+                channel1_urn_expected = '3C00000186B96114'
+
+                # Assert that the URN matches the expected hardware configuration
+                assert channel1_urn_expected == channel1_urn_after, f"Expected channel 1 TEDS URN '{channel1_urn_expected}', but got '{channel1_urn_after}'"
+                logger.info("Verified: Channel 1 TEDS URN matches expected value")
+
+                # Check that there are no errors in the result
+                has_errors = False
+                applied_channels = 0
+                for channel_index, urn in enumerate(verify_result):
+                    if urn and isinstance(urn, str):
+                        # Check if the URN contains error messages
+                        if "error" in urn.lower() or "invalid" in urn.lower() or "mismatch" in urn.lower():
+                            logger.error(f"Channel {channel_index+1}: Unexpected error in TedsVerifyAndApply result: {urn}")
+                            has_errors = True
+                        elif urn.strip() and urn.lower() != "disabled":
+                            logger.info(f"Channel {channel_index+1}: Successfully applied TEDS URN: {urn}")
+                            applied_channels += 1
+                        else:
+                            logger.info(f"Channel {channel_index+1}: No TEDS or disabled")
+
+                # Assert that there were NO errors
+                assert not has_errors, "TedsVerifyAndApply should not return any errors when applying TEDS from channel 1 TEDS.vic"
+
+                # Assert that exactly 1 channel was applied
+                assert applied_channels == 1, f"Expected 1 channel to have TEDS applied, but found {applied_channels}"
+
+                # Get the InputSensitivity for channel 1 AFTER TedsVerifyAndApply
+                sensitivity_after = self.vv.InputSensitivity(0)  # Channel 1 is index 0
+                logger.info(f"Channel 1 InputSensitivity AFTER TedsVerifyAndApply: {sensitivity_after}")
+
+                # Verify that the sensitivity changed
+                assert sensitivity_before != sensitivity_after, f"Channel 1 InputSensitivity should change after TedsVerifyAndApply, but remained {sensitivity_before}"
+                logger.info(f"Verified: Channel 1 InputSensitivity changed from {sensitivity_before} to {sensitivity_after}")
+
+                logger.info("Test passed: TedsVerifyAndApply succeeded without errors and changed InputSensitivity")
+
             except Exception as e:
-                # This is the expected behavior - TedsVerifyAndApply should raise an exception
+                # This is unexpected - TedsVerifyAndApply should not raise an exception
                 error_info = ExtractComErrorInfo(e)
-                logger.info(f"TedsVerifyAndApply raised expected exception: {error_info}")
-                exception_raised = True
-
-            # Assert that an exception WAS raised (this is the expected behavior)
-            assert exception_raised, "TedsVerifyAndApply should raise an exception when applying TEDS from channel 1 TEDS.vic, but no exception was raised"
-
-            logger.info("Test passed: TedsVerifyAndApply raised expected exception")
+                logger.error(f"TedsVerifyAndApply unexpectedly raised an exception: {error_info}")
+                pytest.fail(f"TedsVerifyAndApply should succeed but raised an exception: {error_info}")
 
         except AssertionError:
             # Re-raise assertion errors (these are test failures)
             raise
         except Exception as e:
             error_info = ExtractComErrorInfo(e)
-            logger.error(f"Error in test_TedsVerifyAndApply_with_channel1_TEDS_should_fail: {error_info}")
-            pytest.fail(f"Error in test_TedsVerifyAndApply_with_channel1_TEDS_should_fail: {error_info}")
+            logger.error(f"Error in test_TedsVerifyAndApply_with_channel1_TEDS_should_pass: {error_info}")
+            pytest.fail(f"Error in test_TedsVerifyAndApply_with_channel1_TEDS_should_pass: {error_info}")
 
     @pytest.mark.teds
     def test_TedsReadAndApply_with_channel1_TEDS_should_pass(self):
