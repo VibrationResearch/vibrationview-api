@@ -156,35 +156,38 @@ def find_test_file(test_folder, test_files):
     """
     def _find_test_file(test_type):
         """Find an appropriate test file for the specified test type"""
+        # Normalize the test folder path
+        normalized_test_folder = os.path.normpath(test_folder)
+
         if test_type in test_files:
-            test_file = os.path.join(test_folder, test_files[test_type])
+            test_file = os.path.join(normalized_test_folder, test_files[test_type])
             if os.path.exists(test_file):
                 return test_file
-        
+
         # Try to find any test file with the appropriate extension
-        if os.path.exists(test_folder):
+        if os.path.exists(normalized_test_folder):
             # Get the extension for the requested test type
             ext = None
             if test_type in test_files:
                 ext = os.path.splitext(test_files[test_type])[1]
-            
+
             # Search for files with that extension
             if ext:
-                for file in os.listdir(test_folder):
+                for file in os.listdir(normalized_test_folder):
                     if file.lower().endswith(ext.lower()):
-                        return os.path.join(test_folder, file)
-            
+                        return os.path.join(normalized_test_folder, file)
+
             # If no file with specific extension found, try any known extension
-            for file in os.listdir(test_folder):
+            for file in os.listdir(normalized_test_folder):
                 for _, test_file in test_files.items():
                     if file.lower().endswith(os.path.splitext(test_file)[1].lower()):
-                        return os.path.join(test_folder, file)
-        
+                        return os.path.join(normalized_test_folder, file)
+
         # If no specific file found, return the first available one
         default_test = next(iter(test_files.values()), None)
         if default_test:
-            return os.path.join(test_folder, default_test)
-        
+            return os.path.join(normalized_test_folder, default_test)
+
         return None
     
     return _find_test_file

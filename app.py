@@ -239,7 +239,7 @@ class VibrationVIEWTester:
         # If no specific file found, return the first available one
         default_test = next(iter(self.test_files.values()), None)
         if default_test:
-            return os.path.join(self.test_folder, default_test)
+            return os.path.normpath(os.path.join(self.test_folder, default_test))
         
         return None
     
