@@ -839,6 +839,43 @@ class VibrationVIEW:
         """Load input configuration file"""
         return self.vv.set_InputConfigurationFile(configName)
 
+    @com_method
+    def CloseTest(self, profile_name: str) -> bool:
+        """
+        Close test profile by name.
+
+        Args:
+            profile_name: Name of the test profile to close
+
+        Returns:
+            True if test was closed, False otherwise
+        """
+        return bool(self.vv.CloseTest(profile_name))
+
+    @com_method
+    def CloseTab(self, tab_index: int) -> bool:
+        """
+        Close test tab by index.
+
+        Args:
+            tab_index: Index of the tab to close
+
+        Returns:
+            True if tab was closed, False otherwise
+        """
+        return bool(self.vv.CloseTab(tab_index))
+
+    @com_method
+    def ListOpenTests(self) -> List[str]:
+        """
+        List all open test profiles.
+
+        Returns:
+            List of open test profile names
+        """
+        result = self.vv.ListOpenTests
+        return result if result else []
+
 
 # Singleton pattern for shared VibrationVIEW instance in web applications
 class VibrationVIEWPool:
