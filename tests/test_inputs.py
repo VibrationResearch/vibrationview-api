@@ -425,6 +425,90 @@ class TestInputConfiguration:
             pytest.fail(f"Error in test_input_accel_power_source_set_read_consistency: {error_info}")
 
     @pytest.mark.config
+    def test_input_accel_power_source_while_running_should_fail(self):
+        """Test that setting InputAccelPowerSource while test is running should fail"""
+        try:
+            # Test first channel (most likely to be available)
+            channel_index = 0
+
+            # Check if hardware supports accelerometer power source for this channel
+            if not self.vv.HardwareSupportsAccelPowerSource(channel_index):
+                logger.info(f"Hardware does not support accelerometer power source for channel {channel_index}")
+                pytest.skip(f"Hardware does not support accelerometer power source for channel {channel_index}")
+
+            # Find the default sine test file
+            test_file = self.find_test_file("sine")
+            if not test_file:
+                logger.warning("No sine test file found")
+                pytest.skip("No sine test file found for testing")
+
+            logger.info(f"Using test file: {test_file}")
+
+            # Open the sine test
+            try:
+                self.vv.OpenTest(test_file)
+                logger.info(f"Successfully opened test: {test_file}")
+            except Exception as e:
+                error_info = ExtractComErrorInfo(e)
+                logger.error(f"Opening test failed: {error_info}")
+                pytest.fail(f"Opening test failed: {error_info}")
+
+            # Start the test and attempt to set InputAccelPowerSource while running
+            try:
+                # Start the test
+                self.vv.StartTest()
+                logger.info("Started test")
+
+                # Wait for test to be running
+                running = self.wait_for_condition(self.vv.IsRunning, wait_time=10)
+                assert running, "Test did not start running"
+                logger.info("Test is running")
+
+                # Attempt to set InputAccelPowerSource while test is running - this should fail
+                logger.info(f"Attempting to set InputAccelPowerSource while test is running")
+                exception_raised = False
+
+                try:
+                    self.vv.InputAccelPowerSource(channel_index, True)
+                    logger.error("InputAccelPowerSource did not raise exception while test is running")
+                    pytest.fail("InputAccelPowerSource should fail while test is running, but succeeded")
+                except Exception as e:
+                    # This is the expected behavior - InputAccelPowerSource should fail
+                    error_info = ExtractComErrorInfo(e)
+                    logger.info(f"InputAccelPowerSource correctly raised exception while test is running: {error_info}")
+                    exception_raised = True
+
+                # Assert that an exception was raised
+                assert exception_raised, "InputAccelPowerSource should raise an exception while test is running"
+                logger.info("Test passed: InputAccelPowerSource correctly failed while test is running")
+
+            finally:
+                # Always stop the test in the finally block
+                try:
+                    logger.info("Stopping test in finally block")
+                    self.vv.StopTest()
+
+                    # Wait for test to stop
+                    import time
+                    stopped = self.wait_for_not(self.vv.IsRunning, wait_time=5)
+                    if not stopped:
+                        logger.warning("Test did not stop in expected time")
+                    else:
+                        logger.info("Test stopped successfully")
+
+                except Exception as e:
+                    error_info = ExtractComErrorInfo(e)
+                    logger.error(f"Stopping test in finally block failed: {error_info}")
+
+        except AssertionError:
+            # Re-raise assertion errors (these are test failures)
+            raise
+        except Exception as e:
+            error_msg = ExtractComErrorInfo(e)
+            logger.error(f"Error in test_input_accel_power_source_while_running_should_fail: {error_msg}")
+            pytest.fail(f"Error in test_input_accel_power_source_while_running_should_fail: {error_msg}")
+
+    @pytest.mark.config
     def test_input_differential_set_read_consistency(self):
         """Test InputDifferential property set/read consistency"""
         try:
