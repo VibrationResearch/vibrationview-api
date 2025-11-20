@@ -474,6 +474,96 @@ class TestFileOperations:
                 logger.error(f"Stopping test in finally block failed: {error_info}")
 
     @pytest.mark.fileop
+    def test_open_list_close_test_recording_should_fail(self):
+        """Test that closing a test while recording should fail"""
+        # Find the default sine test file
+        test_file = self.find_test_file("sine")
+        if not test_file:
+            logger.warning("No sine test file found")
+            pytest.skip("No sine test file found for testing")
+
+        logger.info(f"Using test file: {test_file}")
+
+        # Get the test profile name from the file path
+        profile_name = os.path.basename(test_file)
+        logger.info(f"Test profile name: {profile_name}")
+
+        # Open the sine test
+        try:
+            self.vv.OpenTest(test_file)
+            logger.info(f"Successfully opened test: {profile_name}")
+        except Exception as e:
+            error_info = ExtractComErrorInfo(e)
+            logger.error(f"Opening test failed: {error_info}")
+            pytest.fail(f"Opening test failed: {error_info}")
+
+        # List the open tests
+        # ListOpenTests returns a 2D array with columns: [tab_index, test_type, file_name, test_name]
+        try:
+            open_tests = self.vv.ListOpenTests()
+            assert open_tests is not None, "ListOpenTests returned None"
+            logger.info(f"Number of open tests: {len(open_tests)}")
+
+            # Log all open tests with their details
+            for i, test_info in enumerate(open_tests):
+                if len(test_info) >= 4:
+                    logger.info(f"Open test {i}: tab_index={test_info[0]}, test_type={test_info[1]}, file_name={test_info[2]}, test_name={test_info[3]}")
+                else:
+                    logger.info(f"Open test {i}: {test_info}")
+
+            # Verify the newly opened test is in the list
+            assert len(open_tests) > 0, "No tests found in open tests list"
+
+            # Look for the test we just opened by checking the file_name column (index 2)
+            found = False
+            found_tab_index = None
+            for test_info in open_tests:
+                if len(test_info) >= 3:
+                    tab_idx = test_info[0]
+                    file_name = test_info[2]
+
+                    # Check if our profile matches the filename (only if file_name is not blank)
+                    if file_name and profile_name in file_name:
+                        found = True
+                        found_tab_index = tab_idx
+                        logger.info(f"Found test at tab index {tab_idx}: file_name='{file_name}'")
+                        break
+
+            assert found, f"Newly opened test '{profile_name}' not found in open tests list"
+            logger.info(f"Verified '{profile_name}' is in the open tests list")
+        except Exception as e:
+            error_info = ExtractComErrorInfo(e)
+            logger.error(f"Listing open tests failed: {error_info}")
+            pytest.fail(f"Listing open tests failed: {error_info}")
+
+        # Start recording and attempt to close the test while recording
+        try:
+            # Start recording
+            self.vv.RecordStart()
+            logger.info("Started recording")
+
+            # Wait a moment for recording to start
+            time.sleep(1)
+            logger.info("Recording is active")
+
+            # Attempt to close the test while recording - this should return False
+            result = self.vv.CloseTest(test_file)
+            assert result == False, f"CloseTest should return False while recording, but returned {result}"
+            logger.info(f"CloseTest correctly returned False while recording")
+
+        finally:
+            # Always stop recording in the finally block
+            try:
+                logger.info("Stopping recording in finally block")
+                self.vv.RecordStop()
+                time.sleep(1)
+                logger.info("Recording stopped successfully")
+
+            except Exception as e:
+                error_info = ExtractComErrorInfo(e)
+                logger.error(f"Stopping recording in finally block failed: {error_info}")
+
+    @pytest.mark.fileop
     def test_open_list_close_test_by_name(self):
         """Test opening a test, listing open tests, and closing the test using profile name"""
         # Find the default sine test file
