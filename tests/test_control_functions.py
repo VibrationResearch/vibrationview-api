@@ -121,11 +121,11 @@ class TestControlFunctions:
             
             # Check if stopped
             logger.info("Waiting for test to stop")
-            stopped = self.wait_for_not(self.vv.IsRunning)
-            if stopped:
-                logger.info("Test stopped successfully")
-            else:
+            running = self.wait_for_not(self.vv.IsRunning, wait_time=5)
+            if running:
                 logger.warning("Test did not stop within timeout period")
+            else:
+                logger.info("Test stopped successfully")
             
         except Exception as e:
             error_info = ExtractComErrorInfo(e)
@@ -149,9 +149,11 @@ class TestControlFunctions:
             self.vv.StopTest()
             
             # Wait for test to fully stop
-            running = self.wait_for_not(self.vv.IsRunning)
+            running = self.wait_for_not(self.vv.IsRunning, wait_time=5)
             if running:
                 logger.warning("Test did not stop within timeout period")
+            else:
+                logger.info("Test stopped successfully")
             
             # Find a test file
             test_file = self.find_test_file("random")  # Try a different test type
@@ -188,7 +190,7 @@ class TestControlFunctions:
             
             # Check if stopped
             logger.info("Waiting for test to stop")
-            running = self.wait_for_not(self.vv.IsRunning)
+            running = self.wait_for_not(self.vv.IsRunning, wait_time=5)
             if not running:
                 logger.info("Test stopped successfully")
             else:
@@ -259,7 +261,7 @@ class TestControlFunctions:
             
             # Check if stopped
             logger.info("Waiting for test to stop")
-            running = self.wait_for_not(self.vv.IsRunning) 
+            running = self.wait_for_not(self.vv.IsRunning, wait_time=5)
             assert running == False, "Test did not stop within timeout period"
             logger.info("Test stopped successfully")
             

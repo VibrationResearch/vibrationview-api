@@ -463,8 +463,8 @@ class TestFileOperations:
                 self.vv.StopTest()
 
                 # Wait for test to stop
-                stopped = self.wait_for_not(self.vv.IsRunning, wait_time=5)
-                if not stopped:
+                running = self.wait_for_not(self.vv.IsRunning, wait_time=5)
+                if running:
                     logger.warning("Test did not stop in expected time")
                 else:
                     logger.info("Test stopped successfully")
@@ -604,6 +604,11 @@ class TestFileOperations:
             found = False
             found_tab_index = None
             tab_name = None
+
+            # Normalize the test file path for case-insensitive comparison
+            normalized_test_file = os.path.normcase(os.path.normpath(test_file))
+            logger.info(f"Looking for normalized path: '{normalized_test_file}'")
+
             for test_info in open_tests:
                 if len(test_info) >= 3:
                     tab_idx = test_info[0]
@@ -611,13 +616,18 @@ class TestFileOperations:
                     tab_name = test_info[3]
 
                     # Check if our profile matches the filename (only if file_name is not blank)
-                    if file_name and test_file in file_name:
-                        found = True
-                        found_tab_index = tab_idx
-                        logger.info(f"Found test at tab index {tab_idx}: file_name='{file_name}'")
-                        break
+                    if file_name:
+                        # Normalize the file name from the list for case-insensitive comparison
+                        normalized_file_name = os.path.normcase(os.path.normpath(file_name))
+                        logger.debug(f"Comparing: '{normalized_test_file}' vs '{normalized_file_name}'")
 
-            assert found, f"Newly opened test '{test_file}' not found in open tests list"
+                        if normalized_test_file == normalized_file_name or normalized_test_file in normalized_file_name:
+                            found = True
+                            found_tab_index = tab_idx
+                            logger.info(f"Found test at tab index {tab_idx}: file_name='{file_name}' (matched '{test_file}')")
+                            break
+
+            assert found, f"Newly opened test '{test_file}' not found in open tests list. Searched for normalized path: '{normalized_test_file}'"
             logger.info(f"Verified '{test_file}' is in the open tests list")
         except Exception as e:
             error_info = ExtractComErrorInfo(e)
