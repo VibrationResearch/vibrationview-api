@@ -776,15 +776,6 @@ class VibrationVIEW:
         return self.vv.InputEngineeringScale(channel)
 
     @com_method
-    def EnableTEDS(self, channel: int, value: Optional[bool] = None) -> bool:
-        """Get/Set TEDS enable setting for a channel"""
-        if value is None:
-            return bool(self.vv.EnableTEDS(channel))
-        else:
-            self.vv._oleobj_.Invoke(78, 0, pythoncom.DISPATCH_PROPERTYPUT, 0, channel, int(bool(value)))
-            return bool(value)
-
-    @com_method
     def InputMode(self, channel: int, powerSource: bool, capCoupled: bool, differential: bool) -> bool:
         """Set input mode for a channel"""
         return self.vv.InputMode(channel, powerSource, capCoupled, differential)
