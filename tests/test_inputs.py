@@ -663,6 +663,183 @@ class TestInputConfiguration:
                 error_info = ExtractComErrorInfo(e)
                 logger.warning(f"Failed to reload defaults: {error_info}")
 
+    @pytest.mark.config
+    def test_input_configuration_while_test_running_fails(self):
+        """Test that setting input configuration while test is running should fail"""
+        try:
+            # Set up config file paths
+            config_subfolder = "InputConfig"
+            config_folder = os.path.join(self.script_dir, '..', config_subfolder)
+
+            # Skip test if config folder doesn't exist
+            if not os.path.exists(config_folder):
+                logger.warning(f"Configuration folder not found: {config_folder}")
+                pytest.skip(f"Configuration folder not found: {config_folder}")
+
+            # Find test configuration file
+            config_file = os.path.join(config_folder, "100mV per G.vic")
+            if not os.path.exists(config_file):
+                logger.warning(f"Configuration file not found: {config_file}")
+                pytest.skip(f"Configuration file not found: {config_file}")
+
+            # Find the default sine test file
+            test_file = self.find_test_file("sine")
+            if not test_file:
+                logger.warning("No sine test file found")
+                pytest.skip("No sine test file found for testing")
+
+            logger.info(f"Using test file: {test_file}")
+
+            # Open the sine test
+            try:
+                self.vv.OpenTest(test_file)
+                logger.info(f"Successfully opened test: {test_file}")
+            except Exception as e:
+                error_info = ExtractComErrorInfo(e)
+                logger.error(f"Opening test failed: {error_info}")
+                pytest.fail(f"Opening test failed: {error_info}")
+
+            # Start the test and attempt to set input configuration while running
+            try:
+                # Start the test
+                self.vv.StartTest()
+                logger.info("Started test")
+
+                # Wait for test to be running
+                running = self.wait_for_condition(self.vv.IsRunning, wait_time=10)
+                assert running, "Test did not start running"
+                logger.info("Test is running")
+
+                # Attempt to set input configuration while test is running - this should fail
+                logger.info(f"Attempting to set input configuration while test is running")
+                exception_raised = False
+
+                try:
+                    self.vv.SetInputConfigurationFile(config_file)
+                    logger.error("SetInputConfigurationFile did not raise exception while test is running")
+                    pytest.fail("SetInputConfigurationFile should fail while test is running, but succeeded")
+                except Exception as e:
+                    # This is the expected behavior - SetInputConfigurationFile should fail
+                    error_info = ExtractComErrorInfo(e)
+                    logger.info(f"SetInputConfigurationFile correctly raised exception while test is running: {error_info}")
+                    exception_raised = True
+
+                # Assert that an exception was raised
+                assert exception_raised, "SetInputConfigurationFile should raise an exception while test is running"
+                logger.info("Test passed: SetInputConfigurationFile correctly failed while test is running")
+
+            finally:
+                # Always stop the test in the finally block
+                try:
+                    logger.info("Stopping test in finally block")
+                    self.vv.StopTest()
+
+                    # Wait for test to stop
+                    import time
+                    stopped = self.wait_for_not(self.vv.IsRunning, wait_time=5)
+                    if not stopped:
+                        logger.warning("Test did not stop in expected time")
+                    else:
+                        logger.info("Test stopped successfully")
+
+                except Exception as e:
+                    error_info = ExtractComErrorInfo(e)
+                    logger.error(f"Stopping test in finally block failed: {error_info}")
+
+        except AssertionError:
+            # Re-raise assertion errors (these are test failures)
+            raise
+        except Exception as e:
+            error_msg = ExtractComErrorInfo(e)
+            logger.error(f"Error in test_input_configuration_while_test_running_fails: {error_msg}")
+            pytest.fail(f"Error in test_input_configuration_while_test_running_fails: {error_msg}")
+
+    @pytest.mark.config
+    def test_input_configuration_while_recording_fails(self):
+        """Test that setting input configuration while recording should fail"""
+        try:
+            # Set up config file paths
+            config_subfolder = "InputConfig"
+            config_folder = os.path.join(self.script_dir, '..', config_subfolder)
+
+            # Skip test if config folder doesn't exist
+            if not os.path.exists(config_folder):
+                logger.warning(f"Configuration folder not found: {config_folder}")
+                pytest.skip(f"Configuration folder not found: {config_folder}")
+
+            # Find test configuration file
+            config_file = os.path.join(config_folder, "100mV per G.vic")
+            if not os.path.exists(config_file):
+                logger.warning(f"Configuration file not found: {config_file}")
+                pytest.skip(f"Configuration file not found: {config_file}")
+
+            # Find the default sine test file
+            test_file = self.find_test_file("sine")
+            if not test_file:
+                logger.warning("No sine test file found")
+                pytest.skip("No sine test file found for testing")
+
+            logger.info(f"Using test file: {test_file}")
+
+            # Open the sine test
+            try:
+                self.vv.OpenTest(test_file)
+                logger.info(f"Successfully opened test: {test_file}")
+            except Exception as e:
+                error_info = ExtractComErrorInfo(e)
+                logger.error(f"Opening test failed: {error_info}")
+                pytest.fail(f"Opening test failed: {error_info}")
+
+            # Start recording and attempt to set input configuration while recording
+            try:
+                # Start recording
+                self.vv.RecordStart()
+                logger.info("Started recording")
+
+                # Wait a moment for recording to start
+                import time
+                time.sleep(1)
+                logger.info("Recording is active")
+
+                # Attempt to set input configuration while recording - this should fail
+                logger.info(f"Attempting to set input configuration while recording")
+                exception_raised = False
+
+                try:
+                    self.vv.SetInputConfigurationFile(config_file)
+                    logger.error("SetInputConfigurationFile did not raise exception while recording")
+                    pytest.fail("SetInputConfigurationFile should fail while recording, but succeeded")
+                except Exception as e:
+                    # This is the expected behavior - SetInputConfigurationFile should fail
+                    error_info = ExtractComErrorInfo(e)
+                    logger.info(f"SetInputConfigurationFile correctly raised exception while recording: {error_info}")
+                    exception_raised = True
+
+                # Assert that an exception was raised
+                assert exception_raised, "SetInputConfigurationFile should raise an exception while recording"
+                logger.info("Test passed: SetInputConfigurationFile correctly failed while recording")
+
+            finally:
+                # Always stop recording in the finally block
+                try:
+                    logger.info("Stopping recording in finally block")
+                    self.vv.RecordStop()
+                    import time
+                    time.sleep(1)
+                    logger.info("Recording stopped successfully")
+
+                except Exception as e:
+                    error_info = ExtractComErrorInfo(e)
+                    logger.error(f"Stopping recording in finally block failed: {error_info}")
+
+        except AssertionError:
+            # Re-raise assertion errors (these are test failures)
+            raise
+        except Exception as e:
+            error_msg = ExtractComErrorInfo(e)
+            logger.error(f"Error in test_input_configuration_while_recording_fails: {error_msg}")
+            pytest.fail(f"Error in test_input_configuration_while_recording_fails: {error_msg}")
+
     def _apply_final_configuration(self, config_folder):
         """Apply the final configuration file"""
         try:
