@@ -72,8 +72,8 @@ class VibrationVIEWTester:
             print(f"Warning: Could not create log file: {e}")
             self.log_file = None
        
-    def log(self, message, success=None):
-        """Log test result to console and file"""
+    def _log(self, message, success=None):
+        """Internal logging method - log test result to console and file"""
         status = ""
         if success is not None:
             status = "[PASS]" if success else "[FAIL]"
@@ -143,10 +143,10 @@ class VibrationVIEWTester:
             print(f"\nTesting: {test_name}")
             print("-" * 40)
             result = test_func(*args, **kwargs)
-            self.log(f"{test_name} - Completed successfully", True)
+            self._log(f"{test_name} - Completed successfully", True)
             return result
         except Exception as e:
-            self.log(f"{test_name} - Failed with error: {ExtractComErrorInfo(e)}", False)
+            self._log(f"{test_name} - Failed with error: {ExtractComErrorInfo(e)}", False)
             traceback.print_exc()
             return None
     
@@ -154,10 +154,10 @@ class VibrationVIEWTester:
         """Test connection to VibrationVIEW"""
         self.vv = VibrationVIEW()
         if self.vv.vv is None:
-            self.log("Connection to VibrationVIEW failed", False)
+            self._log("Connection to VibrationVIEW failed", False)
             return False
         
-        self.log("Connected to VibrationVIEW successfully", True)
+        self._log("Connected to VibrationVIEW successfully", True)
 
         return True
     
@@ -165,20 +165,20 @@ class VibrationVIEWTester:
         """Test basic property getters"""
         # Test hardware properties
         inputs = self.vv.GetHardwareInputChannels()
-        self.log(f"Hardware input channels: {inputs}", (inputs is not None) and inputs in [4, 8, 12, 16])
+        self._log(f"Hardware input channels: {inputs}", (inputs is not None) and inputs in [4, 8, 12, 16])
       
         outputs = self.vv.GetHardwareOutputChannels()
-        self.log(f"Hardware output channels: {outputs}", (outputs is not None) and outputs in [1, 2, 3, 4])
+        self._log(f"Hardware output channels: {outputs}", (outputs is not None) and outputs in [1, 2, 3, 4])
         
         serial = self.vv.GetHardwareSerialNumber()
-        self.log(f"Hardware serial number: {serial:X}", serial is not None)
-        self.log(f"Running demo mode: {serial:X}", (serial is not None) and (serial == 0xffffff))
+        self._log(f"Hardware serial number: {serial:X}", serial is not None)
+        self._log(f"Running demo mode: {serial:X}", (serial is not None) and (serial == 0xffffff))
 
         version = self.vv.GetSoftwareVersion()
-        self.log(f"Software version: {version}", version is not None)
+        self._log(f"Software version: {version}", version is not None)
         
         is_ready = self.vv.IsReady()
-        self.log(f"VibrationVIEW ready: {is_ready}", is_ready is True)
+        self._log(f"VibrationVIEW ready: {is_ready}", is_ready is True)
         
         return True
     
@@ -186,26 +186,26 @@ class VibrationVIEWTester:
         """Test window control functions"""
         # Maximize
         self.vv.Maximize()
-        self.log("Window maximized", True)
+        self._log("Window maximized", True)
         time.sleep(1)
 
         # Minimize
         self.vv.Minimize()
-        self.log("Window minimized", True)
+        self._log("Window minimized", True)
         time.sleep(1)
         
         # Restore
         self.vv.Restore()
-        self.log("Window restored", True)
+        self._log("Window restored", True)
         time.sleep(1)
         
         # Restore (second time should drop the maximized)
         self.vv.Restore()
-        self.log("Window restored Again", True)
+        self._log("Window restored Again", True)
 
         # Activate
         self.vv.Activate()
-        self.log("Window activated", True)
+        self._log("Window activated", True)
         time.sleep(1)
         
         return True
@@ -248,32 +248,32 @@ class VibrationVIEWTester:
         # Find a test file
         test_file = self.find_test_file("sine")
         if not test_file:
-            self.log("No test file found for testing", False)
+            self._log("No test file found for testing", False)
             return False
         
         # Open the test
-        self.log(f"Attempting to open test file: {test_file}")
+        self._log(f"Attempting to open test file: {test_file}")
         try:
             self.vv.OpenTest(test_file)
-            self.log(f"Test file opened: {test_file}", True)
+            self._log(f"Test file opened: {test_file}", True)
         except Exception as e:
-            self.log(f"Opening test file failed: {ExtractComErrorInfo(e)}", False)
+            self._log(f"Opening test file failed: {ExtractComErrorInfo(e)}", False)
 
-        self.log(f"Attempting to open and run test file: {test_file}")
+        self._log(f"Attempting to open and run test file: {test_file}")
         try:
             self.vv.RunTest(test_file)
-            self.log(f"Test file run: {test_file}", True)
+            self._log(f"Test file run: {test_file}", True)
         except Exception as e:
-            self.log(f"Running test file failed: {ExtractComErrorInfo(e)}", False)
+            self._log(f"Running test file failed: {ExtractComErrorInfo(e)}", False)
             return False
         
         # Get test type
         try:
             test_type = self.vv.TestType()
             test_type_name = vvTestType.get_name(test_type) if test_type is not None else "Unknown"
-            self.log(f"Test type: {test_type_name}", test_type is not None)
+            self._log(f"Test type: {test_type_name}", test_type is not None)
         except Exception as e:
-            self.log(f"Getting test type failed: {ExtractComErrorInfo(e)}", False)
+            self._log(f"Getting test type failed: {ExtractComErrorInfo(e)}", False)
         
         # Save data if possible
         try:
@@ -296,9 +296,9 @@ class VibrationVIEWTester:
             save_path = os.path.join(data_dir, base_name + new_ext)
             
             self.vv.SaveData(save_path)
-            self.log(f"Test data saved to: {save_path}", True)
+            self._log(f"Test data saved to: {save_path}", True)
         except Exception as e:
-            self.log(f"Saving data failed: {ExtractComErrorInfo(e)}", False)
+            self._log(f"Saving data failed: {ExtractComErrorInfo(e)}", False)
         
         return True
     
@@ -307,94 +307,94 @@ class VibrationVIEWTester:
         try:
             num_channels = self.vv.GetHardwareInputChannels()
             if num_channels is None:
-                self.log("Unable to get number of hardware input channels", False)
+                self._log("Unable to get number of hardware input channels", False)
                 return False
                 
-            self.log(f"Number of hardware input channels: {num_channels}", num_channels > 0)
+            self._log(f"Number of hardware input channels: {num_channels}", num_channels > 0)
             
             # Test all available channels
             for channel_index in range(num_channels):
-                self.log(f"\n--- Testing Channel {channel_index+1} ---", True)
+                self._log(f"\n--- Testing Channel {channel_index+1} ---", True)
                 
                 # Get channel label
                 try:
                     label = self.vv.ChannelLabel(channel_index)
-                    self.log(f"Channel {channel_index+1} label: {label}", label is not None)
+                    self._log(f"Channel {channel_index+1} label: {label}", label is not None)
                 except Exception as e:
-                    self.log(f"Error getting channel label: {ExtractComErrorInfo(e)}", False)
+                    self._log(f"Error getting channel label: {ExtractComErrorInfo(e)}", False)
                 
                 # Get channel unit
                 try:
                     unit = self.vv.ChannelUnit(channel_index)
-                    self.log(f"Channel {channel_index+1} unit: {unit}", unit is not None)
+                    self._log(f"Channel {channel_index+1} unit: {unit}", unit is not None)
                 except Exception as e:
-                    self.log(f"Error getting channel unit: {ExtractComErrorInfo(e)}", False)
+                    self._log(f"Error getting channel unit: {ExtractComErrorInfo(e)}", False)
                 
                 # Try to get sensitivity
                 try:
                     sensitivity = self.vv.InputSensitivity(channel_index)
-                    self.log(f"Channel {channel_index+1} sensitivity: {sensitivity}", sensitivity is not None)
+                    self._log(f"Channel {channel_index+1} sensitivity: {sensitivity}", sensitivity is not None)
                 except Exception as e:
-                    self.log(f"Channel {channel_index+1} sensitivity: {ExtractComErrorInfo(e)}", False)
+                    self._log(f"Channel {channel_index+1} sensitivity: {ExtractComErrorInfo(e)}", False)
                 
                 # Try to get TEDS data
                 try:
                     # Create an array to receive the TEDS data
                     teds_array = self.vv.Teds(channel_index)
-                    self.log(f"Channel {channel_index+1} TEDS data retrieved", teds_array is not None)
+                    self._log(f"Channel {channel_index+1} TEDS data retrieved", teds_array is not None)
                     if teds_array:
                         teds_str = str(teds_array)
-                        self.log(f"TEDS data: {teds_str[:200]}..." if len(teds_str) > 200 
+                        self._log(f"TEDS data: {teds_str[:200]}..." if len(teds_str) > 200 
                                 else f"TEDS data: {teds_str}", True)
                 except Exception as e:
-                    self.log(f"Channel {channel_index+1} TEDS data: {ExtractComErrorInfo(e)}", False)
+                    self._log(f"Channel {channel_index+1} TEDS data: {ExtractComErrorInfo(e)}", False)
                 
                 # Try to get hardware capabilities
                 try:
                     cap_coupled = self.vv.HardwareSupportsCapacitorCoupled(channel_index)
-                    self.log(f"Channel {channel_index+1} supports capacitor coupled: {cap_coupled}", 
+                    self._log(f"Channel {channel_index+1} supports capacitor coupled: {cap_coupled}", 
                             cap_coupled is not None)
                     
                     accel_power = self.vv.HardwareSupportsAccelPowerSource(channel_index)
-                    self.log(f"Channel {channel_index+1} supports accel power source: {accel_power}", 
+                    self._log(f"Channel {channel_index+1} supports accel power source: {accel_power}", 
                             accel_power is not None)
                     
                     differential = self.vv.HardwareSupportsDifferential(channel_index)
-                    self.log(f"Channel {channel_index+1} supports differential: {differential}", 
+                    self._log(f"Channel {channel_index+1} supports differential: {differential}", 
                             differential is not None)
                 except Exception as e:
-                    self.log(f"Error getting hardware capabilities: {ExtractComErrorInfo(e)}", False)
+                    self._log(f"Error getting hardware capabilities: {ExtractComErrorInfo(e)}", False)
                     
                 # Get additional channel information if available
                 try:
                     # Try to get serial number
                     serial = self.vv.InputSerialNumber(channel_index)
-                    self.log(f"Channel {channel_index+1} serial number: {serial}", serial is not None)
+                    self._log(f"Channel {channel_index+1} serial number: {serial}", serial is not None)
                     
                     # Try to get calibration date
                     cal_date = self.vv.InputCalDate(channel_index)
-                    self.log(f"Channel {channel_index+1} calibration date: {cal_date}", cal_date is not None)
+                    self._log(f"Channel {channel_index+1} calibration date: {cal_date}", cal_date is not None)
                     
                     # Try to get capacitor coupled status
                     cap_status = self.vv.InputCapacitorCoupled(channel_index)
-                    self.log(f"Channel {channel_index+1} capacitor coupled status: {cap_status}", cap_status is not None)
+                    self._log(f"Channel {channel_index+1} capacitor coupled status: {cap_status}", cap_status is not None)
                     
                     # Try to get power source status
                     power_status = self.vv.InputAccelPowerSource(channel_index)
-                    self.log(f"Channel {channel_index+1} accel power source status: {power_status}", power_status is not None)
+                    self._log(f"Channel {channel_index+1} accel power source status: {power_status}", power_status is not None)
                     
                     # Try to get differential status
                     diff_status = self.vv.InputDifferential(channel_index)
-                    self.log(f"Channel {channel_index+1} differential status: {diff_status}", diff_status is not None)
+                    self._log(f"Channel {channel_index+1} differential status: {diff_status}", diff_status is not None)
                     
                     # Try to get engineering scale
                     eng_scale = self.vv.InputEngineeringScale(channel_index)
-                    self.log(f"Channel {channel_index+1} engineering scale: {eng_scale}", eng_scale is not None)
+                    self._log(f"Channel {channel_index+1} engineering scale: {eng_scale}", eng_scale is not None)
                 except Exception as e:
-                    self.log(f"Error getting additional channel information: {ExtractComErrorInfo(e)}", False)
+                    self._log(f"Error getting additional channel information: {ExtractComErrorInfo(e)}", False)
                     
         except Exception as e:
-            self.log(f"Error in test_channel_info: {ExtractComErrorInfo(e)}", False)
+            self._log(f"Error in test_channel_info: {ExtractComErrorInfo(e)}", False)
             return False
         
         return True
@@ -409,23 +409,23 @@ class VibrationVIEWTester:
                     self.vv.RunTest(sine_test)
                     test_type = self.vv.TestType()
                     if test_type != vvTestType.TEST_SINE:
-                        self.log("Could not run a sine test, vectors will have unexpected results", None)
+                        self._log("Could not run a sine test, vectors will have unexpected results", None)
                 except:
-                    self.log("Could not run a sine test, vectors will have unexpected results", None)
+                    self._log("Could not run a sine test, vectors will have unexpected results", None)
                     return True
                 
                 # Wait up to 5 seconds for IsRunning
                 running = self.wait_for_condition(self.vv.IsRunning)
                 if running:
                     self.vv.SweepHold()
-                    self.log("Sweep hold command sent", True)
+                    self._log("Sweep hold command sent", True)
 
             for vector_name in ["WAVEFORMAXIS", "FREQUENCYAXIS", "TIMEHISTORYAXIS"]:
                 vector_enum = getattr(vvVector, vector_name)
                 try:
                     # Get vector length
                     length = self.vv.VectorLength(vector_enum)
-                    self.log(f"{vector_name} length: {length}", length is not None)
+                    self._log(f"{vector_name} length: {length}", length is not None)
                     
                     # Get vector data
                     inputs = self.vv.GetHardwareInputChannels()
@@ -433,48 +433,48 @@ class VibrationVIEWTester:
                     data_len = len(data) if data else 0
                     num_columns = len(data[0]) if data and data[0] else 0  # Get the number of columns (assuming non-empty data)
     
-                    self.log(f"{vector_name} data retrieved, length: {data_len}, columns: {num_columns}", data is not None)
+                    self._log(f"{vector_name} data retrieved, length: {data_len}, columns: {num_columns}", data is not None)
                     
                     for column_index in range(num_columns):
                         # Get vector unit
                         unit = self.vv.VectorUnit(vector_enum + column_index)
-                        self.log(f"{vector_name} Channel:{column_index} unit: {unit}", unit is not None)
+                        self._log(f"{vector_name} Channel:{column_index} unit: {unit}", unit is not None)
                     
                         # Get vector label
                         label = self.vv.VectorLabel(vector_enum + column_index)
-                        self.log(f"{vector_name} Channel:{column_index} label: {label}", label is not None)
+                        self._log(f"{vector_name} Channel:{column_index} label: {label}", label is not None)
                     
                 except Exception as e:
-                    self.log(f"Error with {vector_name}: {ExtractComErrorInfo(e)}", False)
+                    self._log(f"Error with {vector_name}: {ExtractComErrorInfo(e)}", False)
         except Exception as e:
-            self.log(f"Error in vector acquisition tests: {ExtractComErrorInfo(e)}", False)
+            self._log(f"Error in vector acquisition tests: {ExtractComErrorInfo(e)}", False)
         
         # Test other data acquisition methods
         try:
             # Channel data
             channel_data = self.vv.Channel()
-            self.log(f"Channel data retrieved, length: {len(channel_data) if channel_data else 0}", channel_data is not None)
+            self._log(f"Channel data retrieved, length: {len(channel_data) if channel_data else 0}", channel_data is not None)
             
             # Demand data
             demand_data = self.vv.Demand()
-            self.log(f"Demand data retrieved, length: {len(demand_data) if demand_data else 0}", demand_data is not None)
+            self._log(f"Demand data retrieved, length: {len(demand_data) if demand_data else 0}", demand_data is not None)
             
             # Control data
             control_data = self.vv.Control()
-            self.log(f"Control data retrieved, length: {len(control_data) if control_data else 0}", control_data is not None)
+            self._log(f"Control data retrieved, length: {len(control_data) if control_data else 0}", control_data is not None)
             
             # Output data
             output_data = self.vv.Output()
-            self.log(f"Output data retrieved, length: {len(output_data) if output_data else 0}", output_data is not None)
+            self._log(f"Output data retrieved, length: {len(output_data) if output_data else 0}", output_data is not None)
             
             # Rear input data
             try:
                 rear_input_data = self.vv.RearInput()
-                self.log(f"Rear input data retrieved, length: {len(rear_input_data) if rear_input_data else 0}", rear_input_data is not None)
+                self._log(f"Rear input data retrieved, length: {len(rear_input_data) if rear_input_data else 0}", rear_input_data is not None)
             except Exception as e:
-                self.log(f"Rear input data retrieval failed: {ExtractComErrorInfo(e)}", False)
+                self._log(f"Rear input data retrieval failed: {ExtractComErrorInfo(e)}", False)
         except Exception as e:
-            self.log(f"Error in data acquisition tests: {ExtractComErrorInfo(e)}", False)
+            self._log(f"Error in data acquisition tests: {ExtractComErrorInfo(e)}", False)
             return False
         
         return True
@@ -484,27 +484,27 @@ class VibrationVIEWTester:
         # Get current status
         try:
             status = self.vv.Status()
-            self.log(f"Test status: {status}", status is not None)
+            self._log(f"Test status: {status}", status is not None)
             
             running = self.vv.IsRunning()
-            self.log(f"Test running: {running}", running is not None)
+            self._log(f"Test running: {running}", running is not None)
             
             starting = self.vv.IsStarting()
-            self.log(f"Test starting: {starting}", starting is not None)
+            self._log(f"Test starting: {starting}", starting is not None)
             
             changing_level = self.vv.IsChangingLevel()
-            self.log(f"Test changing level: {changing_level}", changing_level is not None)
+            self._log(f"Test changing level: {changing_level}", changing_level is not None)
             
             hold_level = self.vv.IsHoldLevel()
-            self.log(f"Test hold level: {hold_level}", hold_level is not None)
+            self._log(f"Test hold level: {hold_level}", hold_level is not None)
             
             open_loop = self.vv.IsOpenLoop()
-            self.log(f"Test open loop: {open_loop}", open_loop is not None)
+            self._log(f"Test open loop: {open_loop}", open_loop is not None)
             
             aborted = self.vv.IsAborted()
-            self.log(f"Test aborted: {aborted}", aborted is not None)
+            self._log(f"Test aborted: {aborted}", aborted is not None)
         except Exception as e:
-            self.log(f"Error getting test status: {ExtractComErrorInfo(e)}", False)
+            self._log(f"Error getting test status: {ExtractComErrorInfo(e)}", False)
         
         self.vv.StopTest()
 
@@ -515,30 +515,30 @@ class VibrationVIEWTester:
             try:
                 # Start test
                 self.vv.StartTest()
-                self.log("Test started", True)
+                self._log("Test started", True)
                 
                 # Check if starting
                 starting = self.wait_for_condition(self.vv.IsStarting)
-                self.log(f"Test starting after start: {starting}", starting is True)
+                self._log(f"Test starting after start: {starting}", starting is True)
 
                 # Wait up to 5 seconds for IsRunning
                 running = self.wait_for_condition(self.vv.IsRunning)
 
                 # Check if running
                 running = self.vv.IsRunning()
-                self.log(f"Test running after start: {running}", running is True)
+                self._log(f"Test running after start: {running}", running is True)
                 
                 # Stop test
                 self.vv.StopTest()
-                self.log("Test stopped", True)
+                self._log("Test stopped", True)
                 
                 # Check if stopped
                 running = self.wait_for_not(self.vv.IsRunning)
-                self.log(f"Test running after stop: {running}", running is False)
+                self._log(f"Test running after stop: {running}", running is False)
             except Exception as e:
-                self.log(f"Error in test start/stop: {ExtractComErrorInfo(e)}", False)
+                self._log(f"Error in test start/stop: {ExtractComErrorInfo(e)}", False)
         else:
-            self.log("Test already running, skipping start/stop test", None)
+            self._log("Test already running, skipping start/stop test", None)
         
         self.vv.StopTest()
 
@@ -557,38 +557,38 @@ class VibrationVIEWTester:
                         self.vv.OpenTest(sine_test)
                         test_type = self.vv.TestType()
                         if test_type != vvTestType.TEST_SINE:
-                            self.log("Could not open a sine test, skipping sine-specific tests", None)
+                            self._log("Could not open a sine test, skipping sine-specific tests", None)
                             return True
                     except:
-                        self.log("Could not open a sine test, skipping sine-specific tests", None)
+                        self._log("Could not open a sine test, skipping sine-specific tests", None)
                         return True
                 else:
-                    self.log("No sine test available, skipping sine-specific tests", None)
+                    self._log("No sine test available, skipping sine-specific tests", None)
                     return True
             else:
                 self.vv.StartTest()
                 
         except Exception as e:
-            self.log(f"Error checking test type: {ExtractComErrorInfo(e)}", False)
+            self._log(f"Error checking test type: {ExtractComErrorInfo(e)}", False)
             return False
         
         # Test sine sweep functions
         try:
             # Get sine frequency
             freq = self.vv.SineFrequency()
-            self.log(f"Sine frequency: {freq}", freq is not None)
+            self._log(f"Sine frequency: {freq}", freq is not None)
             
             # Get sweep multiplier
             sweep_mult = self.vv.SweepMultiplier()
-            self.log(f"Sweep multiplier: {sweep_mult}", sweep_mult is not None)
+            self._log(f"Sweep multiplier: {sweep_mult}", sweep_mult is not None)
             
             # Set sweep multiplier 
             if sweep_mult is not None:
                 new_sweep_mult = sweep_mult * 0.5
                 self.vv.SweepMultiplier(new_sweep_mult)  # Set to same value to test setter
-                self.log(f"Set sweep multiplier to: {new_sweep_mult}", True)
+                self._log(f"Set sweep multiplier to: {new_sweep_mult}", True)
                 sweep_mult = self.vv.SweepMultiplier()
-                self.log(f"Verified sweep multiplier set to: {sweep_mult}", (sweep_mult is not None) and (new_sweep_mult == sweep_mult))
+                self._log(f"Verified sweep multiplier set to: {sweep_mult}", (sweep_mult is not None) and (new_sweep_mult == sweep_mult))
 
 
             # Test sweep commands (if test is running)
@@ -597,43 +597,43 @@ class VibrationVIEWTester:
                 try:
                     # Get demand multiplier
                     demand_mult = self.vv.DemandMultiplier()
-                    self.log(f"Demand multiplier: {demand_mult}", demand_mult is not None)
+                    self._log(f"Demand multiplier: {demand_mult}", demand_mult is not None)
 
                     # Set demand multiplier 
                     if demand_mult is not None:
                         new_demand_mult = 1 # dB
                         self.vv.DemandMultiplier(new_demand_mult)  # Set to test setter
-                        self.log(f"Set demand multiplier to: {new_demand_mult}", True)
+                        self._log(f"Set demand multiplier to: {new_demand_mult}", True)
                         demand_mult = self.vv.DemandMultiplier()
-                        self.log(f"Verified demand multiplier set to: {demand_mult}", (demand_mult is not None) and (new_demand_mult == demand_mult))
+                        self._log(f"Verified demand multiplier set to: {demand_mult}", (demand_mult is not None) and (new_demand_mult == demand_mult))
                     self.vv.SweepHold()
-                    self.log("Sweep hold command sent", True)
+                    self._log("Sweep hold command sent", True)
                     time.sleep(1)
                     
                     self.vv.SweepUp()
-                    self.log("Sweep up command sent", True)
+                    self._log("Sweep up command sent", True)
                     time.sleep(1)
                     
                     self.vv.SweepDown()
-                    self.log("Sweep down command sent", True)
+                    self._log("Sweep down command sent", True)
                     time.sleep(1)
                     
                     self.vv.SweepStepUp()
-                    self.log("Sweep step up command sent", True)
+                    self._log("Sweep step up command sent", True)
                     time.sleep(1)
                     
                     self.vv.SweepStepDown()
-                    self.log("Sweep step down command sent", True)
+                    self._log("Sweep step down command sent", True)
                     time.sleep(1)
                     
                     self.vv.SweepResonanceHold()
-                    self.log("Sweep resonance hold command sent", True)
+                    self._log("Sweep resonance hold command sent", True)
                 except Exception as e:
-                    self.log(f"Error in sweep commands: {ExtractComErrorInfo(e)}", False)
+                    self._log(f"Error in sweep commands: {ExtractComErrorInfo(e)}", False)
             else:
-                self.log("Test not running, skipping sweep commands", None)
+                self._log("Test not running, skipping sweep commands", None)
         except Exception as e:
-            self.log(f"Error in sine-specific tests: {ExtractComErrorInfo(e)}", False)
+            self._log(f"Error in sine-specific tests: {ExtractComErrorInfo(e)}", False)
             return False
 
         if self.vv.IsRunning:
@@ -674,10 +674,10 @@ class VibrationVIEWTester:
             
             num_channels = self.vv.GetHardwareInputChannels()
             if num_channels is None or num_channels <= 0:
-                self.log("Unable to get number of hardware input channels", False)
+                self._log("Unable to get number of hardware input channels", False)
                 return False
                     
-            self.log(f"Testing SetInputConfigurationFile for {num_channels} channels")
+            self._log(f"Testing SetInputConfigurationFile for {num_channels} channels")
             
             # Create config file path in a subfolder of the script directory
             config_subfolder = "InputConfig"
@@ -685,23 +685,23 @@ class VibrationVIEWTester:
             
             # Ensure the directory exists
             if not os.path.exists(config_folder):
-                self.log(f"Configuration folder not found: {config_folder}", False)
+                self._log(f"Configuration folder not found: {config_folder}", False)
                 return False
             
             # Use the specific .vic file
             config_file = os.path.join(config_folder, "channel 1 TEDS.vic")
             
             if not os.path.exists(config_file):
-                self.log(f"Configuration file not found: {config_file}", False)
+                self._log(f"Configuration file not found: {config_file}", False)
                 return False
             
             # Apply the configuration file once (it will change all channels)
             try:
                 self.vv.SetInputConfigurationFile(config_file)
-                self.log(f"\nApplied configuration file: {config_file} to all channels", True)
+                self._log(f"\nApplied configuration file: {config_file} to all channels", True)
                 
                 # Check all channels after configuration
-                self.log("\n--- Getting settings for all channels after configuration ---", True)
+                self._log("\n--- Getting settings for all channels after configuration ---", True)
                 for channel_index in range(min(num_channels, 16)):
                     try:
                         # Get channel properties
@@ -716,16 +716,16 @@ class VibrationVIEWTester:
                         cal_date = self.vv.InputCalDate(channel_index)
             
                         # Log the actual configurations retrieved from self.vv
-                        self.log(f"Channel {channel_index+1} settings after config:", True)
-                        self.log(f"  - Label: {label}", label is not None)
-                        self.log(f"  - Unit: {unit}", unit is not None)
-                        self.log(f"  - Sensitivity: {sensitivity}", sensitivity is not None)
-                        self.log(f"  - Engineering Scale: {eng_scale}", eng_scale is not None)
-                        self.log(f"  - Capacitor Coupled: {cap_coupled}", cap_coupled is not None)
-                        self.log(f"  - Accel Power Source: {accel_power}", accel_power is not None)
-                        self.log(f"  - Differential: {differential}", differential is not None)
-                        self.log(f"  - Serial Number: {serial}", serial is not None)
-                        self.log(f"  - Calibration Date: {cal_date}", cal_date is not None)
+                        self._log(f"Channel {channel_index+1} settings after config:", True)
+                        self._log(f"  - Label: {label}", label is not None)
+                        self._log(f"  - Unit: {unit}", unit is not None)
+                        self._log(f"  - Sensitivity: {sensitivity}", sensitivity is not None)
+                        self._log(f"  - Engineering Scale: {eng_scale}", eng_scale is not None)
+                        self._log(f"  - Capacitor Coupled: {cap_coupled}", cap_coupled is not None)
+                        self._log(f"  - Accel Power Source: {accel_power}", accel_power is not None)
+                        self._log(f"  - Differential: {differential}", differential is not None)
+                        self._log(f"  - Serial Number: {serial}", serial is not None)
+                        self._log(f"  - Calibration Date: {cal_date}", cal_date is not None)
                         
                         # Test TEDS data using the improved method
                         teds_data = self.vv.Teds(channel_index)
@@ -764,17 +764,17 @@ class VibrationVIEWTester:
                                 # If there's an error for this channel
                                 if channel_index == 0:
                                     # First channel should have TEDS
-                                    self.log(f"  - TEDS Error: {channel_teds['Error']}", False)
+                                    self._log(f"  - TEDS Error: {channel_teds['Error']}", False)
                                 else:
                                     # Other channels aren't expected to have TEDS
-                                    self.log(f"  - No TEDS data (as expected for non-primary channel)", True)
+                                    self._log(f"  - No TEDS data (as expected for non-primary channel)", True)
                             else:
                                 # There's TEDS data
                                 teds_info = channel_teds.get("Teds", [])
                                 if teds_info:
                                     # For Channel 1, check against expected values
                                     if channel_index == 0:
-                                        self.log(f"  - TEDS Data: Found {len(teds_info)} items", True)
+                                        self._log(f"  - TEDS Data: Found {len(teds_info)} items", True)
                                         
                                         # Check if all expected values are present
                                         matches = 0
@@ -786,11 +786,11 @@ class VibrationVIEWTester:
                                                     found = True
                                                     matches += 1
                                                     break
-                                            self.log(f"  - TEDS '{expected_key}': expected '{expected_value}', " + 
+                                            self._log(f"  - TEDS '{expected_key}': expected '{expected_value}', " + 
                                                     (f"found match" if found else f"not found or mismatched"), found)
                                         
                                         match_percentage = (matches / total_expected) * 100 if total_expected > 0 else 0
-                                        self.log(f"  - TEDS Validation: {matches}/{total_expected} matches ({match_percentage:.1f}%)", 
+                                        self._log(f"  - TEDS Validation: {matches}/{total_expected} matches ({match_percentage:.1f}%)", 
                                                 match_percentage >= 90)  # Consider >90% a success
                                         
                                     else:
@@ -799,17 +799,17 @@ class VibrationVIEWTester:
                                         teds_preview = ", ".join([f"{item[0]}: {item[1]}" for item in teds_info[:display_count]])
                                         if len(teds_info) > display_count:
                                             teds_preview += f", ... ({len(teds_info)} items total)"
-                                        self.log(f"  - Found TEDS data on non-primary channel: {teds_preview}", None)
+                                        self._log(f"  - Found TEDS data on non-primary channel: {teds_preview}", None)
                                 else:
                                     if channel_index == 0:
-                                        self.log("  - TEDS data structure found but empty", False)
+                                        self._log("  - TEDS data structure found but empty", False)
                                     else:
-                                        self.log("  - No TEDS data (as expected for non-TEDS channel)", True)
+                                        self._log("  - No TEDS data (as expected for non-TEDS channel)", True)
                         else:
                             if channel_index == 0:
-                                self.log("  - No TEDS data returned", False)
+                                self._log("  - No TEDS data returned", False)
                             else:
-                                self.log("  - No TEDS data (as expected for non-TEDS channel)", True)
+                                self._log("  - No TEDS data (as expected for non-TEDS channel)", True)
 
                        # Compare with expected values
                         expected_sensitivity = channel_configs["sensitivities"][channel_index]
@@ -822,44 +822,44 @@ class VibrationVIEWTester:
                         expected_cal_date = channel_configs["cal_dates"][channel_index]
                         
                         # Log comparison results
-                        self.log(f"Channel {channel_index+1} expected vs actual:", True)
+                        self._log(f"Channel {channel_index+1} expected vs actual:", True)
                         if label is not None:
                             match = (expected_label.lower() in label.lower()) if label else False
-                            self.log(f"  - Label: expected '{expected_label}', got '{label}'", match)
+                            self._log(f"  - Label: expected '{expected_label}', got '{label}'", match)
                         
                         if unit is not None:
                             match = (expected_unit.lower() in unit.lower()) if unit else False
-                            self.log(f"  - Unit: expected '{expected_unit}', got '{unit}'", match)
+                            self._log(f"  - Unit: expected '{expected_unit}', got '{unit}'", match)
                         
                         if sensitivity is not None:
                             match = abs(expected_sensitivity - sensitivity) < (expected_sensitivity * 0.001) if sensitivity is not None else False
-                            self.log(f"  - Sensitivity: expected {expected_sensitivity}, got {sensitivity}", match)
+                            self._log(f"  - Sensitivity: expected {expected_sensitivity}, got {sensitivity}", match)
                         
                         if cap_coupled is not None:
                             match = (expected_cap_coupled == cap_coupled)
-                            self.log(f"  - Capacitor Coupled: expected {expected_cap_coupled}, got {cap_coupled}", match)
+                            self._log(f"  - Capacitor Coupled: expected {expected_cap_coupled}, got {cap_coupled}", match)
                         
                         if accel_power is not None:
                             match = (expected_accel_power == accel_power)
-                            self.log(f"  - Accel Power Source: expected {expected_accel_power}, got {accel_power}", match)
+                            self._log(f"  - Accel Power Source: expected {expected_accel_power}, got {accel_power}", match)
                         
                         if differential is not None:
                             match = (expected_differential == differential)
-                            self.log(f"  - Differential: expected {expected_differential}, got {differential}", match)
+                            self._log(f"  - Differential: expected {expected_differential}, got {differential}", match)
                             
                         if serial is not None and expected_serial:
                             match = (expected_serial == serial)
-                            self.log(f"  - Serial Number: expected '{expected_serial}', got '{serial}'", match)
+                            self._log(f"  - Serial Number: expected '{expected_serial}', got '{serial}'", match)
                             
                         if cal_date is not None and expected_cal_date:
                             match = (expected_cal_date in cal_date)
-                            self.log(f"  - Calibration Date: expected '{expected_cal_date}', got '{cal_date}'", match)
+                            self._log(f"  - Calibration Date: expected '{expected_cal_date}', got '{cal_date}'", match)
                         
                     except Exception as e:
-                        self.log(f"Error getting channel {channel_index+1} properties after config: {ExtractComErrorInfo(e)}", False)
+                        self._log(f"Error getting channel {channel_index+1} properties after config: {ExtractComErrorInfo(e)}", False)
                     
             except Exception as e:
-                self.log(f"Error applying configuration file: {ExtractComErrorInfo(e)}", False)
+                self._log(f"Error applying configuration file: {ExtractComErrorInfo(e)}", False)
                 return False
             
             # At the end of the test, apply the 10mV per G.vic file
@@ -868,14 +868,14 @@ class VibrationVIEWTester:
                 
                 if os.path.exists(final_config_file):
                     self.vv.SetInputConfigurationFile(final_config_file)
-                    self.log(f"\nTest completed - Applied final configuration file: {final_config_file}", True)
+                    self._log(f"\nTest completed - Applied final configuration file: {final_config_file}", True)
                 else:
-                    self.log(f"Final configuration file not found: {final_config_file}", False)
+                    self._log(f"Final configuration file not found: {final_config_file}", False)
             except Exception as e:
-                self.log(f"Error applying final configuration file: {ExtractComErrorInfo(e)}", False)
+                self._log(f"Error applying final configuration file: {ExtractComErrorInfo(e)}", False)
                         
         except Exception as e:
-            self.log(f"Error in test_input_configuration_file: {ExtractComErrorInfo(e)}", False)
+            self._log(f"Error in test_input_configuration_file: {ExtractComErrorInfo(e)}", False)
             return False
         
         return True
@@ -885,30 +885,30 @@ class VibrationVIEWTester:
         try:
             # Start recording
             self.vv.RecordStart()
-            self.log("Recording started", True)
+            self._log("Recording started", True)
             
             # Wait a moment
             time.sleep(2)
             
             # Pause recording
             self.vv.RecordPause()
-            self.log("Recording paused", True)
+            self._log("Recording paused", True)
             
             # Wait a moment
             time.sleep(1)
             
             # Stop recording
             self.vv.RecordStop()
-            self.log("Recording stopped", True)
+            self._log("Recording stopped", True)
             
             # Get recording filename
             try:
                 filename = self.vv.RecordGetFilename()
-                self.log(f"Recording filename: {filename}", filename is not None)
+                self._log(f"Recording filename: {filename}", filename is not None)
             except Exception as e:
-                self.log(f"Error getting recording filename: {ExtractComErrorInfo(e)}", False)
+                self._log(f"Error getting recording filename: {ExtractComErrorInfo(e)}", False)
         except Exception as e:
-            self.log(f"Error in recording functions: {ExtractComErrorInfo(e)}", False)
+            self._log(f"Error in recording functions: {ExtractComErrorInfo(e)}", False)
             return False
         
         return True
