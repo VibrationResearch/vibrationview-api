@@ -781,11 +781,6 @@ class VibrationVIEW:
         return self.vv.InputMode(channel, powerSource, capCoupled, differential)
 
     @com_method
-    def InputMode2(self, channel: int, power_source: bool, cap_couple: bool, differential: bool, teds_enable: bool) -> bool:
-        """Set input mode with TEDS enable for a channel"""
-        return self.vv.InputMode2(channel, power_source, cap_couple, differential, teds_enable)
-
-    @com_method
     def InputCalibration(self, channel: int, sensitivity: float, serialNumber: str, calDate: str) -> bool:
         """Set input calibration for a channel"""
         return self.vv.InputCalibration(channel, sensitivity, serialNumber, calDate)
