@@ -299,6 +299,115 @@ class TestControlFunctions:
             pytest.fail(f"Error in test_is_demonstration_mode: {error_info}")
 
     @pytest.mark.control
+    def test_edit_and_abort_edit(self):
+        """Test EditTest and AbortEdit functionality"""
+        try:
+            # Find a test file
+            test_file = self.find_test_file("sine")
+            if not test_file:
+                logger.warning("No test file found")
+                pytest.skip("No test file found for testing EditTest/AbortEdit")
+
+            logger.info(f"Using test file: {test_file}")
+
+            # Open the test in edit mode
+            self.vv.EditTest(test_file)
+            logger.info("EditTest called successfully")
+
+            # Abort the edit
+            self.vv.AbortEdit()
+            logger.info("AbortEdit called successfully")
+
+        except Exception as e:
+            error_info = ExtractComErrorInfo(e)
+            logger.error(f"Error in test_edit_and_abort_edit: {error_info}")
+            pytest.fail(f"Error in test_edit_and_abort_edit: {error_info}")
+
+    @pytest.mark.control
+    def test_can_resume_test(self):
+        """Test CanResumeTest functionality"""
+        try:
+            can_resume = self.vv.CanResumeTest()
+            logger.info(f"CanResumeTest returned: {can_resume}")
+            assert can_resume is not None, "CanResumeTest should return a boolean value"
+            assert isinstance(can_resume, bool), f"CanResumeTest should return bool, but returned {type(can_resume)}"
+            logger.info(f"CanResumeTest succeeded: {can_resume}")
+
+        except Exception as e:
+            error_info = ExtractComErrorInfo(e)
+            logger.error(f"Error in test_can_resume_test: {error_info}")
+            pytest.fail(f"Error in test_can_resume_test: {error_info}")
+
+    @pytest.mark.control
+    def test_resume_test(self):
+        """Test ResumeTest functionality"""
+        try:
+            # Find a test file
+            test_file = self.find_test_file("sine")
+            if not test_file:
+                logger.warning("No test file found")
+                pytest.skip("No test file found for testing ResumeTest")
+
+            logger.info(f"Using test file: {test_file}")
+
+            # Open the test
+            self.vv.OpenTest(test_file)
+            logger.info("Opened test file")
+
+            # Start the test
+            self.vv.StartTest()
+            logger.info("Started test")
+
+            # Wait for test to be running
+            running = self.wait_for_condition(self.vv.IsRunning, wait_time=10)
+            if not running:
+                pytest.fail("Test did not start running")
+
+            logger.info("Test is running")
+
+            # Wait a moment
+            time.sleep(7)
+
+            # Stop the test
+            self.vv.StopTest()
+            logger.info("Stopped test")
+
+            # Wait for test to stop
+            running = self.wait_for_not(self.vv.IsRunning, wait_time=5)
+            if running:
+                logger.warning("Test did not stop in expected time")
+            else:
+                logger.info("Test stopped successfully")
+
+            # Wait a moment
+            time.sleep(1)
+
+            # Check if test can be resumed
+            can_resume = self.vv.CanResumeTest()
+            logger.info(f"CanResumeTest returned: {can_resume}")
+
+            if not can_resume:
+                logger.info("Test cannot be resumed after stopping")
+                pytest.skip("Test cannot be resumed after stopping")
+
+            # Resume the test
+            self.vv.ResumeTest()
+            logger.info("ResumeTest called successfully")
+
+            # Wait a moment
+            time.sleep(1)
+
+            # Stop the test again
+            if self.vv.IsRunning():
+                self.vv.StopTest()
+                logger.info("Stopped test after resuming")
+
+        except Exception as e:
+            error_info = ExtractComErrorInfo(e)
+            logger.error(f"Error in test_resume_test: {error_info}")
+            pytest.fail(f"Error in test_resume_test: {error_info}")
+
+    @pytest.mark.control
     def teardown_method(self):
         """Clean up after each test method"""
         # If test is running, stop it
