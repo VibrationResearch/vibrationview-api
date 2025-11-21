@@ -172,6 +172,61 @@ class TestReportVectorFunctions:
             logger.error(f"Error in test_ReportVectorHeader_basic: {error_info}")
             pytest.fail(f"Error in test_ReportVectorHeader_basic: {error_info}")
 
+    @pytest.mark.report
+    def test_ReportFields_basic(self):
+        """Test basic ReportFields functionality"""
+        try:
+            # Load a test file
+            test_file = self.find_test_file("sine")
+            if not test_file:
+                pytest.skip("Test file 'sine' not found")
+
+            logger.info(f"Loading test file: {test_file}")
+            self.vv.OpenTest(test_file)
+
+            # Test ReportFields with common report fields
+            # ReportFields accepts a comma-separated list of field names
+            # and returns a 2D array with [field_name, value] pairs
+            field_names = "ChName1,ChAcp1,ChSensitivity1,StopCode,TestType"
+
+            try:
+                logger.info(f"Testing ReportFields with fields: {field_names}")
+                result = self.vv.ReportFields(field_names, None)
+
+                assert result is not None, "ReportFields should return data"
+                logger.info(f"ReportFields returned: {type(result)}")
+
+                if hasattr(result, '__len__'):
+                    logger.info(f"ReportFields result length: {len(result)} rows")
+
+                    # ReportFields returns a 2D array with [parameter, value] pairs
+                    # Each row should have 2 elements: [field_name, field_value]
+                    if len(result) > 0:
+                        logger.info(f"ReportFields structure check:")
+                        for i, row in enumerate(result):
+                            if hasattr(row, '__len__'):
+                                assert len(row) == 2, f"Row {i} should have 2 elements [field_name, value], got {len(row)}"
+                                field_name, field_value = row
+                                logger.info(f"  Field: '{field_name}' = '{field_value}'")
+                            else:
+                                logger.warning(f"Row {i} is not iterable: {row}")
+
+                        # Verify we got the expected number of fields
+                        expected_count = len(field_names.split(','))
+                        assert len(result) == expected_count, f"Expected {expected_count} fields, got {len(result)}"
+
+                logger.info("ReportFields basic test completed successfully")
+
+            except Exception as e:
+                error_info = ExtractComErrorInfo(e)
+                logger.warning(f"ReportFields raised exception: {error_info}")
+                pytest.fail(f"ReportFields test failed: {error_info}")
+
+        except Exception as e:
+            error_info = ExtractComErrorInfo(e)
+            logger.error(f"Error in test_ReportFields_basic: {error_info}")
+            pytest.fail(f"Error in test_ReportFields_basic: {error_info}")
+
 
 if __name__ == "__main__":
     # Configure logging

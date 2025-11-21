@@ -456,6 +456,22 @@ class VibrationVIEW:
         return result
 
     @com_method
+    def ReportFields(self, fields: str, array_out: Optional[List] = None) -> List:
+        """
+        Get report field names and values as 2D array (param, value).
+
+        Args:
+            fields: String specifying which field(s) to retrieve
+            array_out: Optional pre-allocated array. If properly sized, it will be filled;
+                      otherwise a new array is allocated
+
+        Returns:
+            2D array containing the requested field data as (parameter, value) pairs
+        """
+        result = self.vv.ReportFields(fields, array_out)
+        return result
+
+    @com_method
     def RearInputUnit(self, channel: int) -> str:
         """Get units for the rear input channel"""
         return self.vv.RearInputUnit(channel)
@@ -464,7 +480,7 @@ class VibrationVIEW:
     def RearInputLabel(self, channel: int) -> str:
         """Get label for the rear input channel"""
         return self.vv.RearInputLabel(channel)
-    
+
     @com_method
     def TedsRead(self) -> List[str]:
         """
