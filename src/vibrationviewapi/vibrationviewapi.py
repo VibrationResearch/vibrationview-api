@@ -308,7 +308,7 @@ class VibrationVIEW:
 
     @com_method
     def IsReady(self) -> bool:
-        """Check if Ethernet Box is running"""
+        """Check if VR Box is running and ready to accept commands"""
         return bool(self.vv.IsReady)
 
     @com_method
@@ -877,6 +877,31 @@ class VibrationVIEW:
         """
         result = self.vv.ListOpenTests
         return result if result else []
+
+    @com_method
+    def ImportVirtualChannels(self, file_path: str) -> bool:
+        """
+        Import virtual channel definitions from a VCHAN file.
+
+        Args:
+            file_path: Path to the VCHAN file to import
+
+        Returns:
+            True if successful, False otherwise
+        """
+        self.vv.ImportVirtualChannels(file_path)
+        return True
+
+    @com_method
+    def RemoveAllVirtualChannels(self) -> bool:
+        """
+        Remove all virtual channel definitions.
+
+        Returns:
+            True if successful, False otherwise
+        """
+        self.vv.RemoveAllVirtualChannels()
+        return True
 
 
 # Singleton pattern for shared VibrationVIEW instance in web applications
