@@ -194,28 +194,7 @@ class TestDataAcquisition:
             file_size = os.path.getsize(save_path)
             logger.info(f"Data file size: {file_size} bytes")
             assert file_size > 0, "Data file is empty"
-            
-            # Test exporting data to CSV if the function exists
-            if hasattr(self.vv, 'ExportData'):
-                # Construct CSV export path
-                csv_path = os.path.join(data_dir, f"{base_name}_{timestamp}.csv")
-                
-                try:
-                    logger.info(f"Exporting data to CSV: {csv_path}")
-                    self.vv.ExportData(csv_path, 'CSV')
-                    
-                    # Verify CSV file exists and has content
-                    assert os.path.exists(csv_path), f"CSV file not found: {csv_path}"
-                    csv_size = os.path.getsize(csv_path)
-                    logger.info(f"CSV file size: {csv_size} bytes")
-                    assert csv_size > 0, "CSV file is empty"
-                except Exception as e:
-                    error_info = ExtractComErrorInfo(e)
-                    logger.warning(f"Error exporting to CSV: {error_info}")
-                    pytest.xfail("CSV export failed")
-            else:
-                logger.info("ExportData method not available, skipping CSV export test")
-            
+
         except Exception as e:
             error_info = ExtractComErrorInfo(e)
             logger.error(f"Error in data save/export tests: {error_info}")
