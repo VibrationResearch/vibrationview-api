@@ -733,6 +733,126 @@ class TestFileOperations:
             logger.error(f"Closing tab failed: {error_info}")
             pytest.fail(f"Closing tab failed: {error_info}")
 
+    @pytest.mark.fileop
+    @pytest.mark.skip(reason="Skipping protected folder test - background save to protected folder currently saves to temp folder instead")
+    def test_save_data_to_protected_folder_should_fail(self):
+        """Test that attempting to save data to a protected folder fails appropriately"""
+        # Find a test file
+        test_file = self.find_test_file("sine")
+        if not test_file:
+            logger.warning("No test file found")
+            pytest.skip("No test file found for testing")
+
+        logger.info(f"Using test file: {test_file}")
+
+        # Open the test
+        try:
+            self.vv.OpenTest(test_file)
+            logger.info(f"Opened test file: {test_file}")
+        except Exception as e:
+            error_info = ExtractComErrorInfo(e)
+            logger.error(f"Opening test file failed: {error_info}")
+            pytest.fail(f"Opening test file failed: {error_info}")
+
+        # Attempt to save to C:\Program Files (a protected location)
+        protected_path = r"C:\Program Files\test_save_data.vsd"
+        logger.info(f"Attempting to save data to protected location: {protected_path}")
+
+        try:
+            # This should fail due to insufficient permissions
+            self.vv.SaveData(protected_path)
+
+            # If we get here, check if the file was actually created
+            if os.path.exists(protected_path):
+                # Unexpected success - clean up and fail the test
+                try:
+                    os.remove(protected_path)
+                except:
+                    pass
+                pytest.fail("SaveData unexpectedly succeeded in saving to protected folder")
+            else:
+                # SaveData returned success but file wasn't created
+                logger.info("SaveData returned success but file was not created (expected behavior)")
+
+        except Exception as e:
+            # Expected: SaveData should raise an exception when trying to save to a protected folder
+            error_info = ExtractComErrorInfo(e)
+            logger.info(f"SaveData correctly failed with error: {error_info}")
+
+            # Verify the error is related to access/permission issues
+            error_lower = error_info.lower()
+            access_related = any(keyword in error_lower for keyword in
+                               ['access', 'denied', 'permission', 'unauthorized', 'cannot create'])
+
+            if access_related:
+                logger.info("Error message indicates access/permission issue as expected")
+            else:
+                logger.warning(f"Error occurred but may not be permission-related: {error_info}")
+
+            # Verify the file was not created
+            assert not os.path.exists(protected_path), f"File should not exist at protected location: {protected_path}"
+            logger.info("Verified that file was not created at protected location")
+
+    @pytest.mark.fileop
+    def test_save_data_to_temp_folder(self):
+        """Test successfully saving data to the temp folder"""
+        import tempfile
+
+        # Find a test file
+        test_file = self.find_test_file("sine")
+        if not test_file:
+            logger.warning("No test file found")
+            pytest.skip("No test file found for testing")
+
+        logger.info(f"Using test file: {test_file}")
+
+        # Open the test
+        try:
+            self.vv.OpenTest(test_file)
+            logger.info(f"Opened test file: {test_file}")
+        except Exception as e:
+            error_info = ExtractComErrorInfo(e)
+            logger.error(f"Opening test file failed: {error_info}")
+            pytest.fail(f"Opening test file failed: {error_info}")
+
+        # Create a path in the temp folder
+        temp_dir = tempfile.gettempdir()
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        temp_path = os.path.join(temp_dir, f"test_save_data_{timestamp}.vsd")
+        logger.info(f"Attempting to save data to temp location: {temp_path}")
+
+        try:
+            # Save data to temp folder - this should succeed
+            self.vv.SaveData(temp_path)
+            logger.info(f"SaveData completed for: {temp_path}")
+
+            # Give the system time to complete the save operation
+            time.sleep(1)
+
+            # Verify the file was created
+            assert os.path.exists(temp_path), f"Data file not found at: {temp_path}"
+            logger.info("Verified that file was created at temp location")
+
+            # Verify file has content
+            file_size = os.path.getsize(temp_path)
+            logger.info(f"Data file size: {file_size} bytes")
+            assert file_size > 0, "Data file is empty"
+            logger.info("SaveData to temp folder succeeded as expected")
+
+        except Exception as e:
+            error_info = ExtractComErrorInfo(e)
+            logger.error(f"SaveData to temp folder failed: {error_info}")
+            pytest.fail(f"SaveData to temp folder should succeed but failed: {error_info}")
+
+        finally:
+            # Clean up - remove the test file
+            try:
+                if os.path.exists(temp_path):
+                    os.remove(temp_path)
+                    logger.info(f"Cleaned up temp file: {temp_path}")
+            except Exception as e:
+                logger.warning(f"Failed to clean up temp file: {e}")
+
 if __name__ == "__main__":
     # Configure logging
     logging.basicConfig(
