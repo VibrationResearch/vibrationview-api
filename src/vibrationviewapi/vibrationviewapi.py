@@ -376,7 +376,7 @@ class VibrationVIEW:
 
     @com_method
     def RearInput(self) -> List[float]:
-        """Get the input readings from the rear inputs"""
+        """Get the input readings from the rear inputs - this can work for more than 8 channels"""
         num_inputs = 8
         arr = [0.0] * num_inputs
         self.vv.RearInput(arr)
