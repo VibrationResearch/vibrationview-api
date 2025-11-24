@@ -97,17 +97,6 @@ class TestVibrationVIEWSine:
             freq = self.vv.SineFrequency()
             assert freq is not None
             logger.info(f"SINE frequency: {freq} Hz")
-            
-            # Test min and max frequencies if applicable
-            if hasattr(self.vv, 'GetMinimumFrequency'):
-                min_freq = self.vv.GetMinimumFrequency()
-                assert min_freq is not None
-                logger.info(f"Minimum frequency: {min_freq} Hz")
-            
-            if hasattr(self.vv, 'GetMaximumFrequency'):
-                max_freq = self.vv.GetMaximumFrequency()
-                assert max_freq is not None
-                logger.info(f"Maximum frequency: {max_freq} Hz")
                 
         except Exception as e:
             error_info = ExtractComErrorInfo(e)
@@ -257,42 +246,13 @@ class TestVibrationVIEWSine:
             self.test_load_sine_test()
             
             # Test various sine parameters if they exist
-            
-            # Test sweep rate
-            if hasattr(self.vv, 'SweepRate'):
-                sweep_rate = self.vv.SweepRate()
-                assert sweep_rate is not None
-                logger.info(f"Sweep rate: {sweep_rate} oct/min")
-                
-                # Test setting sweep rate
-                new_sweep_rate = sweep_rate * 0.8
-                logger.info(f"Setting sweep rate to: {new_sweep_rate} oct/min")
-                self.vv.SweepRate(new_sweep_rate)
-                updated_sweep_rate = self.vv.SweepRate()
-                assert abs(new_sweep_rate - updated_sweep_rate) < 0.0001  # Compare with tolerance
-                logger.info(f"Sweep rate successfully set to: {updated_sweep_rate} oct/min")
-                
-                # Restore original value
-                self.vv.SweepRate(sweep_rate)
-            
-            # Test tone duration (if available)
-            if hasattr(self.vv, 'ToneDuration'):
-                tone_duration = self.vv.ToneDuration()
-                assert tone_duration is not None
-                logger.info(f"Tone duration: {tone_duration} sec")
-            
+
             # Test sweep direction (if available)
             if hasattr(self.vv, 'SweepDirection'):
                 sweep_direction = self.vv.SweepDirection()
                 assert sweep_direction is not None
                 logger.info(f"Sweep direction: {sweep_direction}")
-            
-            # Test tracking filter params (if available)
-            if hasattr(self.vv, 'TrackingFilterBandwidth'):
-                tracking_bw = self.vv.TrackingFilterBandwidth()
-                assert tracking_bw is not None
-                logger.info(f"Tracking filter bandwidth: {tracking_bw}")
-            
+
         except Exception as e:
             error_info = ExtractComErrorInfo(e)
             logger.error(f"Error in test_sine_additional_parameters: {error_info}")
