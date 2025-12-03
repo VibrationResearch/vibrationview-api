@@ -456,6 +456,24 @@ class VibrationVIEW:
         return result
 
     @com_method
+    def ReportVectorHistory(self, vectors: str, array_out: Optional[List] = None, header_out: Optional[List] = None) -> tuple:
+        """
+        Get report vector data from history files.
+
+        Args:
+            vectors: String specifying which vector(s) to retrieve
+            array_out: Optional pre-allocated array. If properly sized, it will be filled;
+                      otherwise a new array is allocated
+            header_out: Optional pre-allocated array for headers. If properly sized, it will be filled;
+                       otherwise a new array is allocated
+
+        Returns:
+            Tuple of (array_out, header_out) containing the requested vector data and headers
+        """
+        result = self.vv.ReportVectorHistory(vectors, array_out, header_out)
+        return result
+
+    @com_method
     def ReportFields(self, fields: str, array_out: Optional[List] = None) -> List:
         """
         Get report field names and values as 2D array (param, value).
@@ -469,6 +487,22 @@ class VibrationVIEW:
             2D array containing the requested field data as (parameter, value) pairs
         """
         result = self.vv.ReportFields(fields, array_out)
+        return result
+
+    @com_method
+    def ReportFieldsHistory(self, fields: str, array_out: Optional[List] = None) -> List:
+        """
+        Get report field names and values from history files as 2D array (param, value1, value2, ...).
+
+        Args:
+            fields: String specifying which field(s) to retrieve
+            array_out: Optional pre-allocated array. If properly sized, it will be filled;
+                      otherwise a new array is allocated
+
+        Returns:
+            2D array containing the requested field data as (parameter, value1, value2, ...) rows
+        """
+        result = self.vv.ReportFieldsHistory(fields, array_out)
         return result
 
     @com_method
