@@ -558,7 +558,7 @@ class VibrationVIEW:
         Read TEDS URNs from hardware and apply to livemode.
         Returns a 1D array of URN strings, one per channel.
         """
-        tedsInfo = self.vv.TedsReadAndApply
+        tedsInfo = self.vv.TedsReadAndApply()
         return tedsInfo
     @com_method
     def TedsFromURN(self, urn: str) -> List[str]:
