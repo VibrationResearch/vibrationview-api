@@ -909,7 +909,7 @@ class VibrationVIEW:
         Returns:
             List of open test profile names
         """
-        result = self.vv.ListOpenTests
+        result = self.vv.ListOpenTests()
         return result if result else []
 
     @com_method
