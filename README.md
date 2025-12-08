@@ -2,8 +2,7 @@
 
 A Python API wrapper for interfacing with Vibration Research Corporation's VibrationVIEW software.
 
-[![PyPI version](https://img.shields.io/pypi/v/vibrationview-api.svg)](https://pypi.org/project/vibrationview-api/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+**Source Code:** [https://github.com/vibrationresearch/vibrationview-api](https://github.com/vibrationresearch/vibrationview-api)
 
 ## Overview
 
@@ -29,6 +28,10 @@ The API wraps the COM interface provided by VibrationVIEW to enable seamless int
 pip install vibrationview-api
 ```
 
+> **Note:**
+> - Version 0.1.6 supports VibrationVIEW 2018-2025
+> - Version 0.1.7+ includes VibrationVIEW 2026 functionality
+
 ### Requirements
 
 - Windows operating system (compatible with Windows 10 and Windows 11)
@@ -36,7 +39,6 @@ pip install vibrationview-api
 - VibrationVIEW automation option (VR9604) - OR - VibrationVIEW may be run in Simulation mode without any additional hardware or software
 - Python 3.7 or higher
 - pywin32 (automatically installed as a dependency)
-- psutil (automatically installed as a dependency)
 
 ## Quick Start
 
@@ -134,8 +136,8 @@ finally:
 
 ## API Documentation
 
-For detailed documentation of all available methods, please visit:
-[VibrationVIEW API Documentation](https://www.vibrationresearch.com/vibrationview-api/)
+For detailed documentation of all available methods, refer to the VibrationVIEW help file included with the software. The latest version of VibrationVIEW can be downloaded from:
+[VibrationVIEW Software Updates](https://vibrationresearch.com/software-update-files/)
 
 ## Examples
 
