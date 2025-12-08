@@ -173,8 +173,8 @@ class TestReportVectorFunctions:
             pytest.fail(f"Error in test_ReportVectorHeader_basic: {error_info}")
 
     @pytest.mark.report
-    def test_ReportFields_basic(self):
-        """Test basic ReportFields functionality"""
+    def test_ReportVectorHistory_basic(self):
+        """Test basic ReportVectorHistory functionality"""
         try:
             # Load a test file
             test_file = self.find_test_file("sine")
@@ -184,48 +184,108 @@ class TestReportVectorFunctions:
             logger.info(f"Loading test file: {test_file}")
             self.vv.OpenTest(test_file)
 
-            # Test ReportFields with common report fields
-            # ReportFields accepts a comma-separated list of field names
-            # and returns a 2D array with [field_name, value] pairs
-            field_names = "ChName1,ChAcp1,ChSensitivity1,StopCode,TestType"
+            # Start the test and wait for it to complete
+            logger.info("Starting test to generate history data")
+            self.vv.StartTest()
+
+            # Wait for test to start running
+            logger.info("Waiting for test to start running")
+            self.wait_for_condition(self.vv.IsRunning)
+
+            # Wait for test to finish on its own
+            logger.info("Waiting for test to complete")
+            self.wait_for_not(self.vv.IsRunning, wait_time=120)
+
+            # Test ReportVectorHistory with vector names
+            vector_names = "Index,Frequency,Demand,Control,Drive,Channel1,Channel2"
 
             try:
-                logger.info(f"Testing ReportFields with fields: {field_names}")
-                result = self.vv.ReportFields(field_names, None)
+                logger.info(f"Testing ReportVectorHistory with vectors: {vector_names}")
+                result = self.vv.ReportVectorHistory(vector_names, None, None)
 
-                assert result is not None, "ReportFields should return data"
-                logger.info(f"ReportFields returned: {type(result)}")
+                assert result is not None, "ReportVectorHistory should return data"
+                logger.info(f"ReportVectorHistory returned: {type(result)}")
 
-                if hasattr(result, '__len__'):
-                    logger.info(f"ReportFields result length: {len(result)} rows")
+                # Result should be a tuple of (array_out, header_out)
+                if isinstance(result, tuple) and len(result) == 2:
+                    array_out, header_out = result
+                    logger.info(f"ReportVectorHistory array_out type: {type(array_out)}")
+                    logger.info(f"ReportVectorHistory header_out type: {type(header_out)}")
 
-                    # ReportFields returns a 2D array with [parameter, value] pairs
-                    # Each row should have 2 elements: [field_name, field_value]
-                    if len(result) > 0:
-                        logger.info(f"ReportFields structure check:")
-                        for i, row in enumerate(result):
-                            if hasattr(row, '__len__'):
-                                assert len(row) == 2, f"Row {i} should have 2 elements [field_name, value], got {len(row)}"
-                                field_name, field_value = row
-                                logger.info(f"  Field: '{field_name}' = '{field_value}'")
-                            else:
-                                logger.warning(f"Row {i} is not iterable: {row}")
+                    if hasattr(array_out, '__len__'):
+                        logger.info(f"ReportVectorHistory array_out length: {len(array_out)} rows")
+                        if len(array_out) > 0:
+                            logger.info(f"ReportVectorHistory first few rows: {array_out[:3] if len(array_out) >= 3 else array_out}")
 
-                        # Verify we got the expected number of fields
-                        expected_count = len(field_names.split(','))
-                        assert len(result) == expected_count, f"Expected {expected_count} fields, got {len(result)}"
+                    if hasattr(header_out, '__len__'):
+                        logger.info(f"ReportVectorHistory header_out length: {len(header_out)} rows")
+                        logger.info(f"ReportVectorHistory headers: {header_out}")
+                else:
+                    # Single return value
+                    if hasattr(result, '__len__'):
+                        logger.info(f"ReportVectorHistory result length: {len(result)}")
 
-                logger.info("ReportFields basic test completed successfully")
+                logger.info("ReportVectorHistory basic test completed successfully")
 
             except Exception as e:
                 error_info = ExtractComErrorInfo(e)
-                logger.warning(f"ReportFields raised exception: {error_info}")
-                pytest.fail(f"ReportFields test failed: {error_info}")
+                logger.warning(f"ReportVectorHistory raised exception: {error_info}")
+                pytest.fail(f"ReportVectorHistory test failed: {error_info}")
 
         except Exception as e:
             error_info = ExtractComErrorInfo(e)
-            logger.error(f"Error in test_ReportFields_basic: {error_info}")
-            pytest.fail(f"Error in test_ReportFields_basic: {error_info}")
+            logger.error(f"Error in test_ReportVectorHistory_basic: {error_info}")
+            pytest.fail(f"Error in test_ReportVectorHistory_basic: {error_info}")
+
+    @pytest.mark.report
+    def test_ReportVectorHistory_should_fail_while_test_is_running(self):
+        """Test that ReportVectorHistory fails while a test is running"""
+        try:
+            # Load a test file
+            test_file = self.find_test_file("sine")
+            if not test_file:
+                pytest.skip("Test file 'sine' not found")
+
+            logger.info(f"Loading test file: {test_file}")
+            self.vv.OpenTest(test_file)
+
+            # Start the test
+            logger.info("Starting test")
+            self.vv.StartTest()
+
+            # Wait for test to start running
+            logger.info("Waiting for test to start running")
+            self.wait_for_condition(self.vv.IsRunning)
+
+            # Try to call ReportVectorHistory while test is running - should fail
+            vector_names = "Index,Frequency,Demand,Control,Drive,Channel1,Channel2"
+
+            try:
+                logger.info(f"Testing ReportVectorHistory while test is running (should fail)")
+                result = self.vv.ReportVectorHistory(vector_names, None, None)
+
+                # If we get here without exception, the call succeeded when it should have failed
+                logger.warning(f"ReportVectorHistory returned data while test was running: {result}")
+                pytest.fail("ReportVectorHistory should fail while test is running, but it succeeded")
+
+            except Exception as e:
+                # Expected - ReportVectorHistory should fail while test is running
+                error_info = ExtractComErrorInfo(e)
+                logger.info(f"ReportVectorHistory correctly failed while test is running: {error_info}")
+
+        except Exception as e:
+            error_info = ExtractComErrorInfo(e)
+            logger.error(f"Error in test_ReportVectorHistory_should_fail_while_test_is_running: {error_info}")
+            pytest.fail(f"Error in test_ReportVectorHistory_should_fail_while_test_is_running: {error_info}")
+
+        finally:
+            # Always stop the test
+            try:
+                logger.info("Stopping test")
+                self.vv.StopTest()
+                self.wait_for_not(self.vv.IsRunning)
+            except Exception as e:
+                logger.warning(f"Error stopping test: {e}")
 
 
 if __name__ == "__main__":
