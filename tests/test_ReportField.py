@@ -20,6 +20,16 @@ import pytest
 # Configure logger
 logger = logging.getLogger(__name__)
 
+# Add necessary paths for imports
+current_dir = os.path.abspath(os.path.dirname(__file__))
+src_dir = os.path.join(current_dir, '..', 'src')
+sys.path.append(src_dir)
+
+try:
+    from vibrationviewapi import ExtractComErrorInfo
+except ImportError:
+    pytest.skip("Could not import VibrationVIEW API.", allow_module_level=True)
+
 class TestVibrationVIEWReportField:
     """Test class for VibrationVIEW ReportField method"""
 
@@ -89,10 +99,185 @@ class TestVibrationVIEWReportField:
                 assert value is not None, f"Report field '{field}' returned None"
             
             logger.info("Successfully retrieved multiple report fields")
-            
+
         except Exception as e:
             logger.error(f"Error getting multiple report fields: {e}")
             raise
+
+    @pytest.mark.report
+    def test_ReportFields_basic(self):
+        """Test basic ReportFields functionality"""
+        try:
+            # Load a test file
+            test_file = self.find_test_file("sine")
+            if not test_file:
+                pytest.skip("Test file 'sine' not found")
+
+            logger.info(f"Loading test file: {test_file}")
+            self.vv.OpenTest(test_file)
+
+            # Test ReportFields with common report fields
+            # ReportFields accepts a comma-separated list of field names
+            # and returns a 2D array with [field_name, value] pairs
+            field_names = "ChName1,ChAcp1,ChSensitivity1,StopCode,TestType"
+
+            try:
+                logger.info(f"Testing ReportFields with fields: {field_names}")
+                result = self.vv.ReportFields(field_names, None)
+
+                assert result is not None, "ReportFields should return data"
+                logger.info(f"ReportFields returned: {type(result)}")
+
+                if hasattr(result, '__len__'):
+                    logger.info(f"ReportFields result length: {len(result)} rows")
+
+                    # ReportFields returns a 2D array with [parameter, value] pairs
+                    # Each row should have 2 elements: [field_name, field_value]
+                    if len(result) > 0:
+                        logger.info(f"ReportFields structure check:")
+                        for i, row in enumerate(result):
+                            if hasattr(row, '__len__'):
+                                assert len(row) == 2, f"Row {i} should have 2 elements [field_name, value], got {len(row)}"
+                                field_name, field_value = row
+                                logger.info(f"  Field: '{field_name}' = '{field_value}'")
+                            else:
+                                logger.warning(f"Row {i} is not iterable: {row}")
+
+                        # Verify we got the expected number of fields
+                        expected_count = len(field_names.split(','))
+                        assert len(result) == expected_count, f"Expected {expected_count} fields, got {len(result)}"
+
+                logger.info("ReportFields basic test completed successfully")
+
+            except Exception as e:
+                error_info = ExtractComErrorInfo(e)
+                logger.warning(f"ReportFields raised exception: {error_info}")
+                pytest.fail(f"ReportFields test failed: {error_info}")
+
+        except Exception as e:
+            error_info = ExtractComErrorInfo(e)
+            logger.error(f"Error in test_ReportFields_basic: {error_info}")
+            pytest.fail(f"Error in test_ReportFields_basic: {error_info}")
+
+    @pytest.mark.report
+    def test_ReportFieldsHistory_basic(self):
+        """Test basic ReportFieldsHistory functionality"""
+        try:
+            # Load a test file
+            test_file = self.find_test_file("sine")
+            if not test_file:
+                pytest.skip("Test file 'sine' not found")
+
+            logger.info(f"Loading test file: {test_file}")
+            self.vv.OpenTest(test_file)
+
+            # Start the test and wait for it to complete
+            logger.info("Starting test to generate history data")
+            self.vv.StartTest()
+
+            # Wait for test to start running
+            logger.info("Waiting for test to start running")
+            self.wait_for_condition(self.vv.IsRunning)
+
+            # Wait for test to finish on its own
+            logger.info("Waiting for test to complete")
+            self.wait_for_not(self.vv.IsRunning, wait_time=120)
+
+            # Test ReportFieldsHistory with common report fields
+            # ReportFieldsHistory accepts a comma-separated list of field names
+            # and returns a 2D array with [field_name, value1, value2, ...] rows
+            # where each value column represents a history file
+            field_names = "ChName1,ChAcp1,ChSensitivity1,StopCode,TestType,TestName"
+
+            try:
+                logger.info(f"Testing ReportFieldsHistory with fields: {field_names}")
+                result = self.vv.ReportFieldsHistory(field_names, None)
+
+                assert result is not None, "ReportFieldsHistory should return data"
+                logger.info(f"ReportFieldsHistory returned: {type(result)}")
+
+                if hasattr(result, '__len__'):
+                    logger.info(f"ReportFieldsHistory result length: {len(result)} rows")
+
+                    # ReportFieldsHistory returns a 2D array with [parameter, value1, value2, ...] rows
+                    # Each row should have at least 1 element (field_name), plus values from history files
+                    if len(result) > 0:
+                        logger.info(f"ReportFieldsHistory structure check:")
+                        for i, row in enumerate(result):
+                            if hasattr(row, '__len__'):
+                                assert len(row) >= 1, f"Row {i} should have at least 1 element [field_name, ...], got {len(row)}"
+                                field_name = row[0]
+                                values = row[1:] if len(row) > 1 else []
+                                logger.info(f"  Field: '{field_name}' = {values}")
+                            else:
+                                logger.warning(f"Row {i} is not iterable: {row}")
+
+                        # Verify we got the expected number of fields
+                        expected_count = len(field_names.split(','))
+                        assert len(result) == expected_count, f"Expected {expected_count} fields, got {len(result)}"
+
+                logger.info("ReportFieldsHistory basic test completed successfully")
+
+            except Exception as e:
+                error_info = ExtractComErrorInfo(e)
+                logger.warning(f"ReportFieldsHistory raised exception: {error_info}")
+                pytest.fail(f"ReportFieldsHistory test failed: {error_info}")
+
+        except Exception as e:
+            error_info = ExtractComErrorInfo(e)
+            logger.error(f"Error in test_ReportFieldsHistory_basic: {error_info}")
+            pytest.fail(f"Error in test_ReportFieldsHistory_basic: {error_info}")
+
+    @pytest.mark.report
+    def test_ReportFieldsHistory_should_fail_while_test_is_running(self):
+        """Test that ReportFieldsHistory fails while a test is running"""
+        try:
+            # Load a test file
+            test_file = self.find_test_file("sine")
+            if not test_file:
+                pytest.skip("Test file 'sine' not found")
+
+            logger.info(f"Loading test file: {test_file}")
+            self.vv.OpenTest(test_file)
+
+            # Start the test
+            logger.info("Starting test")
+            self.vv.StartTest()
+
+            # Wait for test to start running
+            logger.info("Waiting for test to start running")
+            self.wait_for_condition(self.vv.IsRunning)
+
+            # Try to call ReportFieldsHistory while test is running - should fail
+            field_names = "ChName1,ChAcp1,ChSensitivity1,StopCode,TestType,TestName"
+
+            try:
+                logger.info(f"Testing ReportFieldsHistory while test is running (should fail)")
+                result = self.vv.ReportFieldsHistory(field_names, None)
+
+                # If we get here without exception, the call succeeded when it should have failed
+                logger.warning(f"ReportFieldsHistory returned data while test was running: {result}")
+                pytest.fail("ReportFieldsHistory should fail while test is running, but it succeeded")
+
+            except Exception as e:
+                # Expected - ReportFieldsHistory should fail while test is running
+                error_info = ExtractComErrorInfo(e)
+                logger.info(f"ReportFieldsHistory correctly failed while test is running: {error_info}")
+
+        except Exception as e:
+            error_info = ExtractComErrorInfo(e)
+            logger.error(f"Error in test_ReportFieldsHistory_should_fail_while_test_is_running: {error_info}")
+            pytest.fail(f"Error in test_ReportFieldsHistory_should_fail_while_test_is_running: {error_info}")
+
+        finally:
+            # Always stop the test
+            try:
+                logger.info("Stopping test")
+                self.vv.StopTest()
+                self.wait_for_not(self.vv.IsRunning)
+            except Exception as e:
+                logger.warning(f"Error stopping test: {e}")
+
 
 if __name__ == "__main__":
     # Configure logging
