@@ -230,6 +230,145 @@ class TestTedsFunctions:
             pytest.fail(f"Error in test_teds_verify_and_apply: {error_info}")
 
     @pytest.mark.teds
+    def test_TedsVerifyStringAndApply_command(self):
+        """Test TedsVerifyStringAndApply using a comma-separated URN string from TedsRead"""
+        try:
+            # Load TEDS configuration if not already loaded
+            self._ensure_teds_config_loaded()
+
+            num_channels = self.vv.GetHardwareInputChannels()
+            assert num_channels is not None and num_channels > 0
+            logger.info(f"Testing TedsVerifyStringAndApply for {num_channels} channels")
+
+            # First, read current TEDS data using TedsRead()
+            logger.info("Reading current TEDS data using TedsRead()")
+            teds_data = self.vv.TedsRead()
+
+            assert teds_data is not None, "TedsRead() should return data"
+            assert len(teds_data) == num_channels, f"Expected {num_channels} channel results, got {len(teds_data)}"
+
+            # Build comma-separated URN string maintaining index order
+            # Use blank values for disabled channels
+            urn_list = []
+            channels_with_urns = 0
+            for channel_index in range(num_channels):
+                urn = teds_data[channel_index] if channel_index < len(teds_data) else ""
+                if urn and isinstance(urn, str) and urn.strip() and urn.lower() != "disabled":
+                    urn_list.append(urn)
+                    channels_with_urns += 1
+                    logger.info(f"Channel {channel_index+1}: URN '{urn}'")
+                else:
+                    urn_list.append("")  # Blank value for disabled channels
+                    logger.info(f"Channel {channel_index+1}: disabled (blank)")
+
+            if channels_with_urns == 0:
+                pytest.skip("No valid URNs found in TedsRead data for testing")
+
+            test_urn_string = ",".join(urn_list)
+            logger.info(f"Built URN string with {num_channels} channels ({channels_with_urns} with URNs): '{test_urn_string}'")
+
+            # TedsVerifyStringAndApply accepts a comma-separated URN string
+            logger.info(f"Testing TedsVerifyStringAndApply with URN string")
+            try:
+                verify_result = self.vv.TedsVerifyStringAndApply(test_urn_string)
+            except AttributeError as e:
+                if "object has no attribute 'TedsVerifyStringAndApply'" in str(e):
+                    pytest.skip("TedsVerifyStringAndApply method does not exist in COM object")
+                raise
+
+            assert verify_result is not None, "TedsVerifyStringAndApply should return a result"
+            logger.info(f"TedsVerifyStringAndApply returned: {type(verify_result)} with length {len(verify_result) if hasattr(verify_result, '__len__') else 'N/A'}")
+
+            # TedsVerifyStringAndApply returns a rank 1 array of URNs, same as TedsRead
+            assert isinstance(verify_result, (tuple, list)), f"TedsVerifyStringAndApply should return a tuple/list of URNs, got {type(verify_result)}"
+            assert len(verify_result) == num_channels, f"Expected {num_channels} URN results, got {len(verify_result)}"
+
+            # Count channels with valid URNs in result
+            verified_channels = 0
+            for channel_index, urn in enumerate(verify_result):
+                if urn and isinstance(urn, str) and urn.strip() and urn.lower() != "disabled":
+                    logger.info(f"Channel {channel_index+1}: Verified URN '{urn}'")
+                    verified_channels += 1
+                else:
+                    logger.info(f"Channel {channel_index+1}: No URN or disabled")
+
+            logger.info(f"Successfully verified and applied TEDS for {verified_channels} channels using comma-separated URN string")
+            assert verified_channels > 0, "At least one channel should have a valid URN after verification"
+
+        except Exception as e:
+            error_info = ExtractComErrorInfo(e)
+            logger.error(f"Error in test_TedsVerifyStringAndApply_command: {error_info}")
+            pytest.fail(f"Error in test_TedsVerifyStringAndApply_command: {error_info}")
+
+    @pytest.mark.teds
+    def test_TedsVerifyStringAndApply_command_fails(self):
+        """Test TedsVerifyStringAndApply fails with invalid URN string"""
+        try:
+            # Load TEDS configuration if not already loaded
+            self._ensure_teds_config_loaded()
+
+            num_channels = self.vv.GetHardwareInputChannels()
+            assert num_channels is not None and num_channels > 0
+            logger.info(f"Testing TedsVerifyStringAndApply failure case for {num_channels} channels")
+
+            # First, read current TEDS data using TedsRead()
+            logger.info("Reading current TEDS data using TedsRead()")
+            teds_data = self.vv.TedsRead()
+
+            assert teds_data is not None, "TedsRead() should return data"
+            assert len(teds_data) == num_channels, f"Expected {num_channels} channel results, got {len(teds_data)}"
+
+            # Build comma-separated URN string with an invalid URN
+            # Replace first valid URN with an invalid one
+            urn_list = []
+            modified_channel = None
+            for channel_index in range(num_channels):
+                urn = teds_data[channel_index] if channel_index < len(teds_data) else ""
+                if urn and isinstance(urn, str) and urn.strip() and urn.lower() != "disabled":
+                    if modified_channel is None:
+                        # Replace the first valid URN with an invalid one
+                        urn_list.append("INVALID_URN_FOR_TEST")
+                        modified_channel = channel_index
+                        logger.info(f"Channel {channel_index+1}: Modified URN '{urn}' -> 'INVALID_URN_FOR_TEST'")
+                    else:
+                        urn_list.append(urn)
+                        logger.info(f"Channel {channel_index+1}: URN '{urn}'")
+                else:
+                    urn_list.append("")  # Blank value for disabled channels
+                    logger.info(f"Channel {channel_index+1}: disabled (blank)")
+
+            if modified_channel is None:
+                pytest.skip("No valid URNs found in TedsRead data to modify for testing")
+
+            test_urn_string = ",".join(urn_list)
+            logger.info(f"Built invalid URN string with {num_channels} channels: '{test_urn_string}'")
+
+            # TedsVerifyStringAndApply should fail with invalid URN
+            logger.info(f"Testing TedsVerifyStringAndApply with invalid URN string - expecting failure")
+            try:
+                verify_result = self.vv.TedsVerifyStringAndApply(test_urn_string)
+
+                # If we get here, no exception was raised - check if error is in result
+                logger.warning(f"TedsVerifyStringAndApply did not raise exception. Returned: {type(verify_result)}")
+                pytest.fail(f"TedsVerifyStringAndApply should fail with invalid URN, but returned: {verify_result}")
+
+            except AttributeError as e:
+                if "object has no attribute 'TedsVerifyStringAndApply'" in str(e):
+                    pytest.skip("TedsVerifyStringAndApply method does not exist in COM object")
+                raise
+            except Exception as e:
+                # Expected - invalid URN should raise an exception
+                error_info = ExtractComErrorInfo(e)
+                logger.info(f"TedsVerifyStringAndApply correctly raised exception for invalid URN: {error_info}")
+
+            logger.info("Test passed: TedsVerifyStringAndApply correctly failed with invalid URN string")
+
+        except Exception as e:
+            error_info = ExtractComErrorInfo(e)
+            logger.error(f"Error in test_TedsVerifyStringAndApply_command_fails: {error_info}")
+            pytest.fail(f"Error in test_TedsVerifyStringAndApply_command_fails: {error_info}")
+
+    @pytest.mark.teds
     def test_TedsReadAndApply_command(self):
         """Test TedsReadAndApply method to read and apply TEDS data from hardware"""
         try:
