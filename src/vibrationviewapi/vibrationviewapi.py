@@ -521,7 +521,7 @@ class VibrationVIEW:
         Get TEDS URNs for all channels.
         Returns a 1D array of URN strings, one per channel.
         """
-        tedsInfo = self.vv.TedsRead
+        tedsInfo = self.vv.TedsRead()
         return tedsInfo
 
     @com_method
