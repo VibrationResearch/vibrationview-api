@@ -634,11 +634,38 @@ class TestFileOperations:
             logger.error(f"Listing open tests failed: {error_info}")
             pytest.fail(f"Listing open tests failed: {error_info}")
 
-        # Close the newly opened test using CloseTest with profile name (basename only)
+        # Close all tabs matching the test file (there may be duplicates with different paths)
         try:
-            result = self.vv.CloseTest(tab_name)
-            assert result, f"CloseTest failed to close '{tab_name}'"
-            logger.info(f"Successfully closed test: {tab_name}")
+            closed_count = 0
+            while True:
+                # Get current list of open tests
+                open_tests_current = self.vv.ListOpenTests()
+                if not open_tests_current:
+                    break
+
+                # Find a matching tab to close
+                tab_to_close = None
+                for test_info in open_tests_current:
+                    if len(test_info) >= 4:
+                        file_name = test_info[2]
+                        current_tab_name = test_info[3]
+                        if file_name:
+                            normalized_file_name = os.path.normcase(os.path.normpath(file_name))
+                            if normalized_test_file == normalized_file_name or normalized_test_file in normalized_file_name:
+                                tab_to_close = current_tab_name
+                                logger.info(f"Found matching tab to close: '{current_tab_name}' (file: '{file_name}')")
+                                break
+
+                if not tab_to_close:
+                    break  # No more matching tabs
+
+                result = self.vv.CloseTest(tab_to_close)
+                assert result, f"CloseTest failed to close '{tab_to_close}'"
+                logger.info(f"Successfully closed test: {tab_to_close}")
+                closed_count += 1
+
+            logger.info(f"Closed {closed_count} tab(s) matching '{test_file}'")
+            assert closed_count > 0, f"No tabs were closed for '{test_file}'"
 
             # Verify the test was closed by listing open tests again
             open_tests_after = self.vv.ListOpenTests()
@@ -650,9 +677,11 @@ class TestFileOperations:
                 for test_info in open_tests_after:
                     if len(test_info) >= 3:
                         file_name = test_info[2]
-                        if file_name and test_file in file_name:
-                            found_after = True
-                            break
+                        if file_name:
+                            normalized_file_name = os.path.normcase(os.path.normpath(file_name))
+                            if normalized_test_file == normalized_file_name or normalized_test_file in normalized_file_name:
+                                found_after = True
+                                break
 
                 assert not found_after, f"Test '{test_file}' still in open tests list after closing"
 
