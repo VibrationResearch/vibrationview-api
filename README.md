@@ -137,7 +137,7 @@ finally:
 ## API Documentation
 
 For detailed documentation of all available methods, refer to the VibrationVIEW help file included with the software. The latest version of VibrationVIEW can be downloaded from:
-[VibrationVIEW Software Updates](https://vibrationresearch.com/software-update-files/)
+[VibrationVIEW Download](https://vibrationresearch.com/download-demo/)
 
 ## Examples
 
