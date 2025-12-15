@@ -760,6 +760,42 @@ Get report field values from history files.
 
 ---
 
+#### `FormFields() -> List`
+
+Get all form field values as a 2D array.
+
+**Returns:** `List` - 2D array of (parameter, value) pairs containing all form fields
+
+```python
+# Get all form fields
+fields = vv.FormFields()
+for field in fields:
+    print(f"{field[0]}: {field[1]}")
+```
+
+---
+
+#### `PostFormFields(fields: List) -> bool`
+
+Post form field values from a 2D array, merging with existing form fields.
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `fields` | List | 2D array of (parameter, value) pairs to post |
+
+**Returns:** `bool` - True if successful
+
+```python
+# Post form field values
+form_data = [
+    ["Operator", "John Smith"],
+    ["Notes", "Test run #1"]
+]
+vv.PostFormFields(form_data)
+```
+
+---
+
 #### `ReportVector(vectors: str, array_out: Optional[List] = None) -> List`
 
 Get report vector data.
