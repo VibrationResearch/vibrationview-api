@@ -506,6 +506,31 @@ class VibrationVIEW:
         return result
 
     @com_method
+    def FormFields(self) -> List:
+        """
+        Get all form field values as 2D array (param, value).
+
+        Returns:
+            2D array containing all form field data as (parameter, value) pairs
+        """
+        result = self.vv.FormFields()
+        return result
+
+    @com_method
+    def PostFormFields(self, fields: List) -> bool:
+        """
+        Post form field values from 2D array (param, value), merging with existing form fields.
+
+        Args:
+            fields: 2D array of (parameter, value) pairs to post
+
+        Returns:
+            True if successful
+        """
+        self.vv.PostFormFields(fields)
+        return True
+
+    @com_method
     def RearInputUnit(self, channel: int) -> str:
         """Get units for the rear input channel"""
         return self.vv.RearInputUnit(channel)
