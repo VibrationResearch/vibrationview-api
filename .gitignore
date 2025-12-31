@@ -10,3 +10,4 @@
 /dist/
 /channel_functions_tests.log
 *.log
+.pypirc
