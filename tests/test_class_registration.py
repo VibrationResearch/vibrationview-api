@@ -3,6 +3,17 @@ import win32com.client
 import pythoncom
 import winreg
 
+# Skip entire module if VibrationVIEW COM components are not registered
+_VV_REGISTERED = False
+try:
+    with winreg.OpenKey(winreg.HKEY_CLASSES_ROOT, "VibrationVIEW.TestControl"):
+        _VV_REGISTERED = True
+except (FileNotFoundError, OSError):
+    pass
+
+if not _VV_REGISTERED:
+    pytest.skip("VibrationVIEW COM components not registered", allow_module_level=True)
+
 
 class TestCOMRegistration:
     """Test COM registration for VibrationVIEW components"""

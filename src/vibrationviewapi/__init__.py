@@ -30,7 +30,8 @@ xample usage:
                 return jsonify({'version': vv.GetSoftwareVersion()})
 """
 
-__version__ = "0.1.4"
+from ._version import __version__
+
 __author__ = "Dan VanBaren"
 __email__ = "support@vibrationresearch.com"
 
@@ -47,7 +48,6 @@ from .vv_enums import vvVector, vvTestType
 # Import helper functions
 from .comhelper import ExtractComErrorInfo
 
-__version__ = "0.1.4"
 __all__ = [
     "VibrationVIEW",
     "VibrationVIEWContext", 
