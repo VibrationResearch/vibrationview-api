@@ -39,6 +39,11 @@ if not VV_COM_AVAILABLE:
     _mock_patcher = patch('win32com.client.Dispatch', return_value=_mock_com_obj)
     _mock_patcher.start()
 
+requires_vv = pytest.mark.skipif(
+    not VV_COM_AVAILABLE,
+    reason="Requires VibrationVIEW COM server"
+)
+
 try:
     # Import main VibrationVIEW API
     from vibrationviewapi import VibrationVIEW, vvVector, vvTestType, ExtractComErrorInfo

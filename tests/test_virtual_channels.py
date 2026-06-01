@@ -9,6 +9,9 @@ import os
 import sys
 import logging
 import pytest
+from .conftest import VV_COM_AVAILABLE
+
+pytestmark = pytest.mark.skipif(not VV_COM_AVAILABLE, reason="Requires VibrationVIEW COM server")
 
 # Configure logger
 logger = logging.getLogger(__name__)
