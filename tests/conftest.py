@@ -18,10 +18,8 @@ src_dir = os.path.join(current_dir, '..', 'src')
 sys.path.insert(0, src_dir)
 
 # Auto-detect if VibrationVIEW COM server is available
-# Set VV_USE_MOCK=1 to force mock/replay mode even when COM is available
-# Set VV_RECORD=1 to record COM interactions for later replay
+# Set VV_USE_MOCK=1 to force mock mode even when COM is available
 VV_COM_AVAILABLE = False
-VV_RECORDING = bool(os.environ.get('VV_RECORD'))
 if not os.environ.get('VV_USE_MOCK'):
     try:
         import win32com.client
@@ -34,27 +32,18 @@ if not os.environ.get('VV_USE_MOCK'):
     except Exception:
         pass
 
-from .com_recorder import COMRecorder, COMReplayer, RECORDING_FILE, set_current_test
-
-# If COM is not available, use replay mock or fall back to static mock
+# If COM is not available, use static mock
 _mock_patcher = None
-_recorder = None
 if not VV_COM_AVAILABLE:
     from unittest.mock import patch
-    if os.path.exists(RECORDING_FILE):
-        _replayer = COMReplayer()
-        _mock_patcher = patch('win32com.client.Dispatch', return_value=_replayer)
-    else:
-        from .mock_com import create_mock_com_object
-        _replayer = create_mock_com_object()
-        _mock_patcher = patch('win32com.client.Dispatch', return_value=_replayer)
+    from .mock_com import create_mock_com_object
+    _replayer = create_mock_com_object()
+    _mock_patcher = patch('win32com.client.Dispatch', return_value=_replayer)
     _mock_patcher.start()
 
-VV_HAS_RECORDING = os.path.exists(RECORDING_FILE)
-
 requires_vv = pytest.mark.skipif(
-    not VV_COM_AVAILABLE and not VV_HAS_RECORDING,
-    reason="Requires VibrationVIEW COM server or recorded_com.json"
+    not VV_COM_AVAILABLE,
+    reason="Requires VibrationVIEW COM server"
 )
 
 requires_vv_live = pytest.mark.skipif(
@@ -68,15 +57,6 @@ try:
 
 except ImportError:
     pytest.skip("Could not import VibrationVIEW API. Make sure they are in the same directory or in your Python path.", allow_module_level=True)
-
-
-def pytest_runtest_setup(item):
-    """Track which test is currently running for COM record/replay."""
-    set_current_test(item.nodeid)
-
-
-def pytest_runtest_teardown(item, nextitem):
-    set_current_test("between_tests")
 
 
 # Private variables for use within conftest.py only
@@ -247,19 +227,12 @@ def find_test_file(test_folder, test_files):
 @pytest.fixture(scope="session")
 def vv():
     """Fixture to provide a VibrationVIEW connection"""
-    global _recorder
-
     # Set up the VibrationVIEW connection
     connection = VibrationVIEW()
     if connection.vv is None:
         pytest.fail("Connection to VibrationVIEW failed")
 
-    # Wrap the COM object with recorder if VV_RECORD=1
-    if VV_RECORDING and VV_COM_AVAILABLE:
-        _recorder = COMRecorder(connection.vv)
-        connection._thread_local.vv_object = _recorder
-
-    if VV_COM_AVAILABLE or VV_HAS_RECORDING:
+    if VV_COM_AVAILABLE:
         try:
             if hasattr(connection, 'SetInputConfigurationFile'):
                 connection.SetInputConfigurationFile("10mV per G.vic")
@@ -276,13 +249,8 @@ def vv():
 
     yield connection
 
-    # Save recording if active
-    if _recorder is not None:
-        _recorder.save()
-        print(f"\nCOM interactions recorded to {RECORDING_FILE}")
-
     # Clean up after all tests
-    if VV_COM_AVAILABLE or VV_HAS_RECORDING:
+    if VV_COM_AVAILABLE:
         try:
             if hasattr(connection, 'IsRunning') and connection.IsRunning():
                 connection.StopTest()
@@ -347,7 +315,7 @@ def setup_vv_test(vv, wait_for_condition, wait_for_not, find_test_file, script_d
 
             # Load "10mV per G.vic" for all tests except TEDS tests
             # Check if this is NOT a TEDS test by checking the test file name
-            if VV_COM_AVAILABLE or VV_HAS_RECORDING:
+            if VV_COM_AVAILABLE:
                 test_file_path = request.fspath.basename
                 if test_file_path != "test_teds_functions.py":
                     if hasattr(vv, 'SetInputConfigurationFile'):
