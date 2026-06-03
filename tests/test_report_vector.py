@@ -20,9 +20,7 @@ import sys
 import time
 import logging
 import pytest
-from .conftest import VV_COM_AVAILABLE
-
-pytestmark = pytest.mark.skipif(not VV_COM_AVAILABLE, reason="Requires VibrationVIEW COM server")
+from .conftest import requires_vv
 
 # Configure logger
 logger = logging.getLogger(__name__)

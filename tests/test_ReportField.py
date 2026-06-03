@@ -16,6 +16,7 @@ import sys
 import time
 import logging
 import pytest
+from .conftest import requires_vv
 
 # Configure logger
 logger = logging.getLogger(__name__)

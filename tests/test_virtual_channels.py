@@ -9,9 +9,14 @@ import os
 import sys
 import logging
 import pytest
-from .conftest import VV_COM_AVAILABLE
+from .conftest import requires_vv_live
 
-pytestmark = pytest.mark.skipif(not VV_COM_AVAILABLE, reason="Requires VibrationVIEW COM server")
+# Path to vchan files in repo
+_inputconfig_folder = os.path.join(os.path.abspath(os.path.dirname(__file__)), '..', 'inputconfig')
+_has_vchan_file = any(
+    f.lower().endswith('.vchan')
+    for f in os.listdir(_inputconfig_folder)
+) if os.path.exists(_inputconfig_folder) else False
 
 # Configure logger
 logger = logging.getLogger(__name__)
@@ -34,6 +39,7 @@ except ImportError:
 class TestVirtualChannels:
     """Test class for virtual channel functions"""
 
+    @pytest.mark.skipif(not _has_vchan_file, reason="No .vchan file in inputconfig folder")
     @pytest.mark.vchan
     def test_remove_all_virtual_channels(self):
         """Test RemoveAllVirtualChannels function"""
@@ -83,6 +89,7 @@ class TestVirtualChannels:
             logger.info(f"ImportVirtualChannels correctly rejected non-existent file: {error_info}")
             # This is expected behavior - failing on invalid file is acceptable
 
+    @pytest.mark.skipif(not _has_vchan_file, reason="No .vchan file in inputconfig folder")
     @pytest.mark.vchan
     def test_import_virtual_channels_with_valid_file(self):
         """Test ImportVirtualChannels with a valid VCHAN file if available"""

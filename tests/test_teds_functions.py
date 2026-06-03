@@ -23,9 +23,7 @@ import logging
 import pytest
 import pythoncom
 from datetime import datetime
-from .conftest import VV_COM_AVAILABLE
-
-pytestmark = pytest.mark.skipif(not VV_COM_AVAILABLE, reason="Requires VibrationVIEW COM server")
+from .conftest import requires_vv_live
 
 # Configure logger
 logger = logging.getLogger(__name__)
@@ -1273,6 +1271,7 @@ class TestTedsFunctions:
             logger.error(f"Error in test_TedsReadAndApply_with_channel1_TEDS_should_pass: {error_info}")
             pytest.fail(f"Error in test_TedsReadAndApply_with_channel1_TEDS_should_pass: {error_info}")
 
+    @requires_vv_live
     @pytest.mark.teds
     def test_TedsReadAndApply_output_voltage_comparison(self):
         """Test TedsReadAndApply effect on OutputVoltage - comparing with and without TEDS applied"""

@@ -22,6 +22,7 @@ import time
 import logging
 import pytest
 from datetime import datetime
+from .conftest import requires_vv
 
 from .channelconfigs import get_channel_config
 
@@ -193,6 +194,214 @@ class TestVibrationVIEW:
             logger.error(f"Error in test_channel_info: {error_info}")
             pytest.fail(f"Error in test_channel_info: {error_info}")
     
+    @pytest.mark.connection
+    def test_open_list_close_test(self):
+        """Test OpenTest, ListOpenTests, CloseTest workflow"""
+        test_file = self.find_test_file("sine")
+        if not test_file:
+            pytest.skip("No test file found")
+
+        self.vv.OpenTest(test_file)
+
+        open_tests = self.vv.ListOpenTests()
+        assert open_tests is not None
+        assert len(open_tests) > 0
+        logger.info(f"Open tests: {open_tests}")
+
+        self.vv.CloseTest(test_file)
+        logger.info("Open/list/close test passed")
+
+    @pytest.mark.connection
+    def test_close_tab(self):
+        """Test CloseTab functionality"""
+        test_file = self.find_test_file("sine")
+        if not test_file:
+            pytest.skip("No test file found")
+
+        self.vv.OpenTest(test_file)
+        self.vv.CloseTab(0)
+        logger.info("CloseTab test passed")
+
+    @pytest.mark.connection
+    def test_edit_and_abort_edit(self):
+        """Test EditTest and AbortEdit"""
+        test_file = self.find_test_file("sine")
+        if not test_file:
+            pytest.skip("No test file found")
+
+        self.vv.EditTest(test_file)
+        self.vv.AbortEdit()
+        logger.info("EditTest/AbortEdit passed")
+
+    @pytest.mark.connection
+    def test_save_data(self):
+        """Test SaveData call"""
+        self.vv.SaveData("mock_output.vsd")
+        logger.info("SaveData call passed")
+
+    @pytest.mark.connection
+    def test_sweep_controls(self):
+        """Test all sweep control methods"""
+        self.vv.SweepUp()
+        self.vv.SweepDown()
+        self.vv.SweepStepUp()
+        self.vv.SweepStepDown()
+        self.vv.SweepHold()
+        self.vv.SweepResonanceHold()
+        logger.info("All sweep control methods passed")
+
+    @pytest.mark.connection
+    def test_demand_multiplier(self):
+        """Test DemandMultiplier get/set"""
+        current = self.vv.DemandMultiplier()
+        assert current is not None
+        self.vv.DemandMultiplier(3.0)
+        assert self.vv.DemandMultiplier() == 3.0
+        self.vv.DemandMultiplier(current)
+        logger.info("DemandMultiplier get/set passed")
+
+    @pytest.mark.connection
+    def test_sweep_multiplier(self):
+        """Test SweepMultiplier get/set"""
+        current = self.vv.SweepMultiplier()
+        assert current is not None
+        self.vv.SweepMultiplier(2.0)
+        assert self.vv.SweepMultiplier() == 2.0
+        self.vv.SweepMultiplier(current)
+        logger.info("SweepMultiplier get/set passed")
+
+    @pytest.mark.connection
+    def test_test_type(self):
+        """Test TestType get/set"""
+        current = self.vv.TestType()
+        assert current is not None
+        self.vv.TestType(vvTestType.TEST_SINE)
+        assert self.vv.TestType() == vvTestType.TEST_SINE
+        logger.info("TestType get/set passed")
+
+    @pytest.mark.connection
+    def test_system_check_properties(self):
+        """Test SystemCheckFrequency and SystemCheckOutputVoltage get/set"""
+        # These require system check test type
+        self.vv.TestType(vvTestType.TEST_SYSCHECK)
+
+        freq = self.vv.SystemCheckFrequency()
+        assert freq is not None
+        self.vv.SystemCheckFrequency(200.0)
+        assert self.vv.SystemCheckFrequency() == 200.0
+        self.vv.SystemCheckFrequency(freq)
+
+        voltage = self.vv.SystemCheckOutputVoltage()
+        assert voltage is not None
+        self.vv.SystemCheckOutputVoltage(0.5)
+        assert self.vv.SystemCheckOutputVoltage() == 0.5
+        self.vv.SystemCheckOutputVoltage(voltage)
+        logger.info("SystemCheck properties get/set passed")
+
+    @pytest.mark.connection
+    def test_sine_frequency(self):
+        """Test SineFrequency get/set"""
+        # Ensure a sine test is loaded so frequency can be set
+        test_file = self.find_test_file("sine")
+        if test_file:
+            self.vv.OpenTest(test_file)
+
+        current = self.vv.SineFrequency()
+        assert current is not None
+        assert isinstance(current, (int, float))
+        logger.info(f"SineFrequency current value: {current}")
+
+        self.vv.SineFrequency(440.0)
+        result = self.vv.SineFrequency()
+        logger.info(f"SineFrequency after set: {result}")
+
+        # Restore original
+        self.vv.SineFrequency(current)
+        logger.info("SineFrequency get/set passed")
+
+    @pytest.mark.connection
+    def test_demand_control_output(self):
+        """Test Demand, Control, Channel, and Output data retrieval"""
+        demand = self.vv.Demand()
+        assert demand is not None
+        assert len(demand) == self.vv.GetHardwareOutputChannels()
+
+        control = self.vv.Control()
+        assert control is not None
+
+        channel = self.vv.Channel()
+        assert channel is not None
+        assert len(channel) == self.vv.GetHardwareInputChannels()
+
+        output = self.vv.Output()
+        assert output is not None
+        logger.info("Demand/Control/Channel/Output data retrieval passed")
+
+    @pytest.mark.connection
+    def test_database_methods(self):
+        """Test database-related methods"""
+        diff = self.vv.IsChannelDifferentThanDatabase(0)
+        assert isinstance(diff, bool)
+
+        ids = self.vv.ChannelDatabaseIDs(0)
+        assert ids is not None
+        logger.info(f"ChannelDatabaseIDs: {ids}")
+
+        self.vv.UpdateChannelConfigFromDatabase(0)
+        logger.info("Database methods passed")
+
+    @pytest.mark.connection
+    def test_input_mode(self):
+        """Test InputMode set method"""
+        self.vv.InputMode(0, True, False, False)
+        assert self.vv.InputAccelPowerSource(0) == True
+        assert self.vv.InputCapacitorCoupled(0) == False
+        assert self.vv.InputDifferential(0) == False
+        logger.info("InputMode set passed")
+
+    @pytest.mark.connection
+    def test_input_calibration(self):
+        """Test InputCalibration set method"""
+        self.vv.InputCalibration(0, 100.0, "SN12345", "2025-01-01")
+        assert self.vv.InputSensitivity(0) == 100.0
+        assert self.vv.InputSerialNumber(0) == "SN12345"
+        cal_date = self.vv.InputCalDate(0)
+        assert cal_date is not None
+        assert "2025" in str(cal_date), f"Expected date containing '2025', got '{cal_date}'"
+        logger.info(f"InputCalibration set passed (date returned: {cal_date})")
+
+    @pytest.mark.connection
+    def test_resume_after_stop(self):
+        """Test CanResumeTest and ResumeTest after stopping a running test"""
+        test_file = self.find_test_file("sine")
+        if not test_file:
+            pytest.skip("No test file found")
+
+        self.vv.OpenTest(test_file)
+        self.vv.StartTest()
+        running = self.wait_for_condition(self.vv.IsRunning, wait_time=10)
+        if not running:
+            pytest.skip("Test did not enter running state")
+
+        time.sleep(2)
+        self.vv.StopTest()
+        self.wait_for_not(self.vv.IsRunning, wait_time=5)
+        time.sleep(1)
+
+        can_resume = self.vv.CanResumeTest()
+        logger.info(f"CanResumeTest: {can_resume}")
+        if not can_resume:
+            pytest.skip("Test cannot be resumed after stopping")
+
+        self.vv.ResumeTest()
+        running = self.wait_for_condition(self.vv.IsRunning, wait_time=10)
+        if running:
+            logger.info("Test resumed successfully")
+
+        self.vv.StopTest()
+        self.wait_for_not(self.vv.IsRunning, wait_time=5)
+        logger.info("Resume after stop passed")
+
     @pytest.mark.control
     def test_test_control(self):
         """Test test control functions"""

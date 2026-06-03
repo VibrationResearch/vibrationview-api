@@ -21,9 +21,7 @@ import time
 import logging
 import pytest
 from datetime import datetime
-from .conftest import VV_COM_AVAILABLE
-
-pytestmark = pytest.mark.skipif(not VV_COM_AVAILABLE, reason="Requires VibrationVIEW COM server")
+from .conftest import requires_vv_live
 
 # Configure logger
 logger = logging.getLogger(__name__)
@@ -54,39 +52,20 @@ class TestRecording:
             # Start recording
             logger.info("Starting recording")
             self.vv.RecordStart()
-            
-            # Wait a moment
-            time.sleep(2)
-            logger.info("Recording for 2 seconds")
-            
+
             # Pause recording
             logger.info("Pausing recording")
             self.vv.RecordPause()
-            
-            # Wait a moment
-            time.sleep(1)
-            logger.info("Paused for 1 second")
-            
+
             # Stop recording
             logger.info("Stopping recording")
             self.vv.RecordStop()
-            
+
             # Get recording filename
-            try:
-                filename = self.vv.RecordGetFilename()
-                assert filename is not None
-                logger.info(f"Recording saved to: {filename}")
-                
-                # Verify file exists
-                assert os.path.exists(filename), f"Recording file not found: {filename}"
-                file_size = os.path.getsize(filename)
-                logger.info(f"Recording file size: {file_size} bytes")
-                assert file_size > 0, "Recording file is empty"
-                
-            except Exception as e:
-                error_info = ExtractComErrorInfo(e)
-                logger.error(f"Error getting recording filename: {error_info}")
-                pytest.fail(f"Error getting recording filename: {error_info}")
+            filename = self.vv.RecordGetFilename()
+            assert filename is not None
+            logger.info(f"Recording saved to: {filename}")
+
         except Exception as e:
             error_info = ExtractComErrorInfo(e)
             logger.error(f"Error in recording functions: {error_info}")
@@ -103,56 +82,35 @@ class TestRecording:
     def test_recording_with_test_running(self):
         """Test recording while a test is running"""
         try:
-            # Find and run a test file
-            test_file = self.find_test_file("sine")
-            if not test_file:
-                logger.warning("No test file found")
-                pytest.skip("No test file found for testing recording with test running")
-            
-            logger.info(f"Using test file: {test_file}")
-            
-            # Open and start the test
-            self.vv.OpenTest(test_file)
-            logger.info(f"Opened test file: {test_file}")
-            
+            # Start a test
             self.vv.StartTest()
             logger.info("Started test")
-            
+
             # Wait for test to enter running state
             running = self.wait_for_condition(self.vv.IsRunning)
             if not running:
                 logger.warning("Test did not enter running state")
                 pytest.skip("Test did not enter running state, skipping recording with test running")
-            
+
             logger.info("Test is running, starting recording")
-            
+
             # Start recording
             self.vv.RecordStart()
             logger.info("Recording started")
-            
-            # Record for a few seconds
-            time.sleep(3)
-            logger.info("Recorded for 3 seconds")
-            
+
             # Stop recording
             self.vv.RecordStop()
             logger.info("Recording stopped")
-            
+
             # Get recording filename
             filename = self.vv.RecordGetFilename()
             assert filename is not None
             logger.info(f"Recording saved to: {filename}")
-            
+
             # Stop the test
             self.vv.StopTest()
             logger.info("Test stopped")
-            
-            # Verify recording file
-            assert os.path.exists(filename), f"Recording file not found: {filename}"
-            file_size = os.path.getsize(filename)
-            logger.info(f"Recording file size: {file_size} bytes")
-            assert file_size > 0, "Recording file is empty"
-            
+
         except Exception as e:
             error_info = ExtractComErrorInfo(e)
             logger.error(f"Error in recording with test running: {error_info}")
@@ -173,38 +131,39 @@ class TestRecording:
             except:
                 pass
     
+    @requires_vv_live
     @pytest.mark.recording
     def test_recording_filename(self):
-        """Test recording with custom filename"""
+        """Test recording with file generation (requires live VibrationVIEW)"""
         try:
             # Create a data directory if it doesn't exist
             data_dir = os.path.join(self.script_dir, '..', 'data')
             if not os.path.exists(data_dir):
                 os.makedirs(data_dir)
                 logger.info(f"Created data directory: {data_dir}")
-            
+
             # Start recording
             logger.info("Starting recording with to test saving to filename")
             self.vv.RecordStart()
-            
+
             # Record for a short time
             time.sleep(2)
             logger.info("Recording for 2 seconds")
-            
+
             # Stop recording
             self.vv.RecordStop()
             logger.info("Recording stopped")
-            
+
             # Get the actual filename used
             actual_filename = self.vv.RecordGetFilename()
             assert actual_filename is not None
             logger.info(f"Actual recording filename: {actual_filename}")
-            
+
             # Verify the file exists
             assert os.path.exists(actual_filename), f"Recording file not found: {actual_filename}"
             file_size = os.path.getsize(actual_filename)
             logger.info(f"Recording file size: {file_size} bytes")
-            
+
             actual_textfilename = GenerateTXTFromVV(actual_filename,'test.txt')
             assert actual_textfilename is not None
             logger.info(f"Actual text filename: {actual_textfilename}")

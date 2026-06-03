@@ -20,9 +20,7 @@ import sys
 import logging
 import pytest
 from datetime import datetime
-from .conftest import VV_COM_AVAILABLE
-
-pytestmark = pytest.mark.skipif(not VV_COM_AVAILABLE, reason="Requires VibrationVIEW COM server")
+from .conftest import requires_vv_live
 
 # Configure logger
 logger = logging.getLogger(__name__)
@@ -45,6 +43,7 @@ except ImportError:
 class TestInputConfiguration:
     """Test class for VibrationVIEW input configuration functionality"""
     
+    @requires_vv_live
     @pytest.mark.config
     def test_input_configuration_file_basic(self):
         """Test basic functionality of SetInputConfigurationFile method"""
@@ -105,6 +104,7 @@ class TestInputConfiguration:
             pytest.fail(f"Error in test_input_configuration_file_basic: {error_info}")
 
 
+    @requires_vv_live
     @pytest.mark.config
     def test_input_configuration_file_teds(self):
         """Test SetInputConfigurationFile with TEDS configuration"""
@@ -208,6 +208,7 @@ class TestInputConfiguration:
             pytest.fail(f"Error in test_input_configuration_file_teds: {error_info}")
 
 
+    @requires_vv_live
     @pytest.mark.config
     def test_input_configuration_file_full(self):
         """Test full channel property verification with SetInputConfigurationFile"""
@@ -299,6 +300,7 @@ class TestInputConfiguration:
             pytest.fail(f"Error in test_input_configuration_file_full: {error_info}")
 
     
+    @requires_vv_live
     @pytest.mark.config
     def test_input_configuration_different_files(self):
         """Test applying different configuration files sequentially"""
@@ -547,6 +549,7 @@ class TestInputConfiguration:
             logger.error(f"Error in test_input_differential_set_read_consistency: {error_info}")
             pytest.fail(f"Error in test_input_differential_set_read_consistency: {error_info}")
 
+    @requires_vv_live
     @pytest.mark.config
     def test_profile_with_forced_input_configuration_should_fail(self):
         """Test profile with forced input configuration - should fail"""

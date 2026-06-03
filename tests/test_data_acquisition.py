@@ -21,6 +21,7 @@ import time
 import logging
 import pytest
 from datetime import datetime
+from .conftest import requires_vv_live
 
 # Configure logger
 logger = logging.getLogger(__name__)
@@ -128,6 +129,7 @@ class TestDataAcquisition:
             except:
                 pass
     
+    @requires_vv_live
     @pytest.mark.data
     def test_data_save_and_export(self):
         """Test saving and exporting data"""

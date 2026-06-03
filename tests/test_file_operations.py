@@ -21,7 +21,9 @@ import time
 import logging
 import pytest
 from datetime import datetime
+from .conftest import requires_vv_live
 
+pytestmark = requires_vv_live
 
 # Configure logger
 logger = logging.getLogger(__name__)
