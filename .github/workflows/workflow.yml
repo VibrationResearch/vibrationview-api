@@ -1,5 +1,8 @@
 name: Python Package CI/CD
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 on:
   push:
     branches: [ main, master ]
@@ -43,6 +46,7 @@ jobs:
       url: https://pypi.org/p/vibrationview-api
     permissions:
       id-token: write
+      contents: read
 
     steps:
     - uses: actions/checkout@v4
