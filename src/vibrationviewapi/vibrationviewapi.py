@@ -84,7 +84,7 @@ def com_method(func):
         
         # Ensure we have a valid COM object for this thread
         if not hasattr(self._thread_local, 'vv_object') or self._thread_local.vv_object is None:
-            self._create_com_object_for_thread()
+            self._create_com_object_for_thread(skip_ready_check=(func.__name__ == "IsReady"))
         
         try:
             return func(self, *args, **kwargs)
@@ -98,7 +98,7 @@ def com_method(func):
                     self._com_manager.uninitialize_com()
                     if not self._com_manager.initialize_com():
                         raise RuntimeError("Failed to reinitialize COM")
-                    self._create_com_object_for_thread()
+                    self._create_com_object_for_thread(skip_ready_check=(func.__name__ == "IsReady"))
                     return func(self, *args, **kwargs)
                 except Exception as retry_error:
                     print(f"Retry failed: {retry_error}")
@@ -134,7 +134,7 @@ class VibrationVIEW:
         # Create initial COM object
         self._create_com_object_for_thread()
     
-    def _create_com_object_for_thread(self):
+    def _create_com_object_for_thread(self, skip_ready_check: bool = False):
         """Create a new COM object for the current thread"""
         thread_id = threading.get_ident()
         
@@ -152,6 +152,11 @@ class VibrationVIEW:
             vv = win32com.client.Dispatch('VibrationVIEW.TestControl')
             print(f'VibrationVIEW object created for thread {thread_id}')
             
+            if skip_ready_check:
+                # Skip IsReady wait loop (e.g., when IsReady itself is being called)
+                self._thread_local.vv_object = vv
+                return
+
             # Wait for VibrationVIEW to be ready with timeout
             start_time = time.time()
             wait_time = 0.5
