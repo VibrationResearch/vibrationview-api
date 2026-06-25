@@ -179,8 +179,10 @@ class VibrationVIEW:
                 time.sleep(wait_time)
                 wait_time = min(wait_time * 1.5, 2.0)  # Exponential backoff with cap
 
-            # Loop completed without IsReady becoming True
-            raise RuntimeError(f'VibrationVIEW not ready after {self._retry_attempts} attempts')
+            # Loop completed without IsReady becoming True; assign the
+            # object anyway so callers can poll IsReady() themselves.
+            print(f'Thread {thread_id}: VibrationVIEW not ready after {self._retry_attempts} attempts, assigning object anyway')
+            self._thread_local.vv_object = vv
 
         except Exception as e:
             error_msg = f'Failed to connect to VibrationVIEW on thread {thread_id}: {ExtractComErrorInfo(e)}'
