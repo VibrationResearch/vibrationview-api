@@ -106,7 +106,7 @@ class TestFileOperations:
         # Save data if possible
         try:
             # Create a data directory if it doesn't exist
-            data_dir = os.path.join(self.script_dir, '..', 'data')
+            data_dir = os.path.normpath(os.path.join(self.script_dir, '..', 'data'))
             if not os.path.exists(data_dir):
                 os.makedirs(data_dir)
                 logger.info(f"Created data directory: {data_dir}")
@@ -152,7 +152,7 @@ class TestFileOperations:
         logger.info(f"Opened test file: {test_file}")
         
         # Create a data directory if it doesn't exist
-        data_dir = os.path.join(self.script_dir, '..', 'data')
+        data_dir = os.path.normpath(os.path.join(self.script_dir, '..', 'data'))
         if not os.path.exists(data_dir):
             os.makedirs(data_dir)
             logger.info(f"Created data directory: {data_dir}")
@@ -255,7 +255,7 @@ class TestFileOperations:
             logger.warning(f"Error running test: {error_info}")
         
         # Create a data directory if it doesn't exist
-        data_dir = os.path.join(self.script_dir, '..', 'data')
+        data_dir = os.path.normpath(os.path.join(self.script_dir, '..', 'data'))
         if not os.path.exists(data_dir):
             os.makedirs(data_dir)
             logger.info(f"Created data directory: {data_dir}")
@@ -271,8 +271,8 @@ class TestFileOperations:
         else:
             new_ext = ext
         
-        save_path = os.path.join(data_dir, f"{base_name}_{timestamp}{new_ext}")
-        
+        save_path = os.path.normpath(os.path.join(data_dir, f"{base_name}_{timestamp}{new_ext}"))
+
         # Save the data
         try:
             self.vv.SaveData(save_path)
