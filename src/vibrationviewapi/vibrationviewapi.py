@@ -163,7 +163,7 @@ class VibrationVIEW:
             
             for attempt in range(1, self._retry_attempts + 1):
                 try:
-                    if vv and vv.IsReady:
+                    if vv is not None and vv.IsReady:
                         print(f'VibrationVIEW key is now valid for thread {thread_id}')
                         self._thread_local.vv_object = vv
                         return
@@ -1030,4 +1030,3 @@ class VibrationVIEWContext:
     
     def __exit__(self, exc_type, exc_val, exc_tb):
         return_vibrationview(self.instance)
-

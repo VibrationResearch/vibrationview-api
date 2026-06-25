@@ -21,6 +21,21 @@ from .mock_com import MockCOMObject
 class TestIsReadySkipsWaitLoop:
     """Verify that IsReady() does not block waiting for itself."""
 
+    def test_falsy_com_object_still_connects_when_ready(self):
+        """Ready COM objects should be accepted even if they evaluate False."""
+        mock = MockCOMObject()
+        type(mock).IsReady = PropertyMock(return_value=1)
+        type(mock).__bool__ = lambda self: False
+
+        with patch("win32com.client.Dispatch", return_value=mock):
+            from vibrationviewapi import VibrationVIEW
+
+            vv = VibrationVIEW(connection_timeout=2, retry_attempts=1)
+
+            assert vv.IsReady() is True
+            assert vv.GetHardwareInputChannels() > 0
+            assert vv.ImportVirtualChannels(__file__) is True
+
     def test_isready_returns_false_without_timeout(self):
         """IsReady() should return False immediately when COM reports not ready,
         rather than timing out inside _create_com_object_for_thread."""
