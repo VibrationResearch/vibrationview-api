@@ -161,11 +161,13 @@ def test_sequential_vs_concurrent():
     # Concurrent test
     print("\nRunning concurrent test...")
     concurrent_results = test_concurrent_access(num_threads=3, operations_per_thread=4)
-    concurrent_time = max(r.get('time', 0) for r in concurrent_results if r.get('success', False))
-    
+    successful_concurrent = [r.get('time', 0) for r in concurrent_results if r.get('success', False)]
+    concurrent_time = max(successful_concurrent) if successful_concurrent else 0
+    concurrent_success = len(successful_concurrent)
+
     print(f"\nPerformance Comparison:")
     print(f"Sequential: {seq_success} operations in {seq_time:.2f}s")
-    print(f"Concurrent: Multiple threads, longest operation: {concurrent_time:.2f}s")
+    print(f"Concurrent: {concurrent_success} operations, longest: {concurrent_time:.2f}s")
 
 
 if __name__ == "__main__":

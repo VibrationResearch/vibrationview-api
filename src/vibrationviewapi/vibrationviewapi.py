@@ -91,7 +91,7 @@ def com_method(func):
         except Exception as e:
             error_str = str(e)
             # If COM error, try to recreate the object once
-            if any(keyword in error_str.lower() for keyword in ["com", "rpc", "coinitialize", "invalid"]):
+            if any(keyword in error_str.lower() for keyword in ["com_error", "rpc", "coinitialize"]):
                 try:
                     print(f"COM error detected, recreating object for thread {threading.get_ident()}")
                     # Force COM reinitialization
@@ -178,7 +178,10 @@ class VibrationVIEW:
                 print(f'Thread {thread_id}, waiting {wait_time} seconds...')
                 time.sleep(wait_time)
                 wait_time = min(wait_time * 1.5, 2.0)  # Exponential backoff with cap
-                
+
+            # Loop completed without IsReady becoming True
+            raise RuntimeError(f'VibrationVIEW not ready after {self._retry_attempts} attempts')
+
         except Exception as e:
             error_msg = f'Failed to connect to VibrationVIEW on thread {thread_id}: {ExtractComErrorInfo(e)}'
             print(error_msg)
