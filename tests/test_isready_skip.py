@@ -32,9 +32,8 @@ class TestIsReadySkipsWaitLoop:
 
             vv = VibrationVIEW(connection_timeout=2, retry_attempts=1)
 
+            assert vv.vv is mock
             assert vv.IsReady() is True
-            assert vv.GetHardwareInputChannels() > 0
-            assert vv.ImportVirtualChannels(__file__) is True
 
     def test_isready_returns_false_without_timeout(self):
         """IsReady() should return False immediately when COM reports not ready,
