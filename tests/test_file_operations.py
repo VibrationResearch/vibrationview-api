@@ -47,7 +47,31 @@ except ImportError:
 
 class TestFileOperations:
     """Test class for VibrationVIEW file operations functionality"""
-    
+
+    def wait_for_save(self, path, timeout=15, interval=0.5, stable_count=3):
+        """Wait for an async SaveData operation to finish writing a file.
+
+        Waits for the file to exist, have non-zero size, and for the size to
+        stop changing for ``stable_count`` consecutive checks.
+
+        Returns the final file size, or 0 if the timeout expires.
+        """
+        last_size = -1
+        stable = 0
+        for _ in range(int(timeout / interval)):
+            if os.path.exists(path):
+                size = os.path.getsize(path)
+                if size > 0:
+                    if size == last_size:
+                        stable += 1
+                        if stable >= stable_count:
+                            return size
+                    else:
+                        stable = 0
+                    last_size = size
+            time.sleep(interval)
+        return last_size if last_size > 0 else 0
+
     @pytest.mark.fileop
     def test_file_operations_basic(self):
         """Test basic file operations (open, save)"""
@@ -102,18 +126,16 @@ class TestFileOperations:
             
             self.vv.SaveData(save_path)
             logger.info(f"Saved data to: {save_path}")
-            
-            # Verify file exists and has content
-            assert os.path.exists(save_path), f"Data file not found: {save_path}"
-            file_size = os.path.getsize(save_path)
+
+            file_size = self.wait_for_save(save_path)
             logger.info(f"Data file size: {file_size} bytes")
-            assert file_size > 0, "Data file is empty"
-            
+            assert file_size > 0, f"Data file is empty or not found: {save_path}"
+
         except Exception as e:
             error_info = ExtractComErrorInfo(e)
             logger.error(f"Saving data failed: {error_info}")
             pytest.fail(f"Saving data failed: {error_info}")
-    
+
     @pytest.mark.fileop
     def test_file_operations_with_timestamp(self):
         """Test file operations with timestamp in filename"""
@@ -155,15 +177,10 @@ class TestFileOperations:
         try:
             self.vv.SaveData(save_path)
             logger.info(f"Saved data to: {save_path}")
-            
-            # give it a second to allow the file save to complete
-            time.sleep(1)
 
-            # Verify file exists and has content
-            assert os.path.exists(save_path), f"Data file not found: {save_path}"
-            file_size = os.path.getsize(save_path)
+            file_size = self.wait_for_save(save_path)
             logger.info(f"Data file size: {file_size} bytes")
-            assert file_size > 0, "Data file is empty"
+            assert file_size > 0, f"Data file is empty or not found: {save_path}"
         except Exception as e:
             error_info = ExtractComErrorInfo(e)
             logger.error(f"Saving data with timestamp failed: {error_info}")
@@ -260,12 +277,10 @@ class TestFileOperations:
         try:
             self.vv.SaveData(save_path)
             logger.info(f"Saved data to: {save_path}")
-            
-            time.sleep(1) # give it a second to save
-            
-            # Verify file exists
-            assert os.path.exists(save_path), f"Data file not found: {save_path}"
-            
+
+            file_size = self.wait_for_save(save_path)
+            assert file_size > 0, f"Data file is empty or not found: {save_path}"
+
             # Try to open the saved data file
             try:
                 actual_textfilename = GenerateTXTFromVV(save_path,'test.txt')
@@ -857,17 +872,9 @@ class TestFileOperations:
             self.vv.SaveData(temp_path)
             logger.info(f"SaveData completed for: {temp_path}")
 
-            # Give the system time to complete the save operation
-            time.sleep(1)
-
-            # Verify the file was created
-            assert os.path.exists(temp_path), f"Data file not found at: {temp_path}"
-            logger.info("Verified that file was created at temp location")
-
-            # Verify file has content
-            file_size = os.path.getsize(temp_path)
+            file_size = self.wait_for_save(temp_path)
             logger.info(f"Data file size: {file_size} bytes")
-            assert file_size > 0, "Data file is empty"
+            assert file_size > 0, f"Data file is empty or not found: {temp_path}"
             logger.info("SaveData to temp folder succeeded as expected")
 
         except Exception as e:
