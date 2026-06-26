@@ -1,215 +1,114 @@
 """
 VibrationVIEW Python API - Thread-Safe Version
 
-This module provides a thread-safe Python interface to VibrationVIEW software 
+This module provides a thread-safe Python interface to VibrationVIEW software
 through COM automation, suitable for multi-threaded applications like Flask.
+
+All COM calls are marshaled to a single dedicated worker thread that owns
+the COM object, ensuring correct COM apartment threading behavior.
 """
 
 import win32com.client
 import pythoncom
 import time
 import threading
-import weakref
-from concurrent.futures import ThreadPoolExecutor
-from functools import wraps
 
 from .vv_enums import vvVector, vvTestType
 from .comhelper import ExtractComErrorInfo
+from .comworker import _com_worker, _ensure_worker, com_method
 
 from typing import List, Union, Optional, Any
 
 
-class COMThreadManager:
-    """Manages COM initialization and cleanup for multiple threads"""
-    
-    def __init__(self):
-        self._thread_data = threading.local()
-        self._active_threads = weakref.WeakSet()
-        self._lock = threading.RLock()
-    
-    def initialize_com(self) -> bool:
-        """Initialize COM for the current thread if not already initialized"""
-        if not hasattr(self._thread_data, 'initialized') or not self._thread_data.initialized:
-            try:
-                # Try to initialize COM - handle the case where it might already be initialized
-                try:
-                    pythoncom.CoInitializeEx(pythoncom.COINIT_APARTMENTTHREADED)
-                except pythoncom.com_error as e:
-                    # If already initialized, that's fine
-                    if e.hresult == -2147221006:  # RPC_E_CHANGED_MODE
-                        # Try with different threading model
-                        try:
-                            pythoncom.CoInitialize()
-                        except:
-                            # COM might already be initialized, which is OK
-                            pass
-                    elif e.hresult == -2147220991:  # S_FALSE - already initialized
-                        pass
-                    else:
-                        raise e
-                
-                self._thread_data.initialized = True
-                self._thread_data.thread_id = threading.get_ident()
-                
-                with self._lock:
-                    self._active_threads.add(threading.current_thread())
-                
-                return True
-            except Exception as e:
-                print(f"Failed to initialize COM: {e}")
-                return False
-        return True
-    
-    def uninitialize_com(self):
-        """Uninitialize COM for the current thread"""
-        if hasattr(self._thread_data, 'initialized') and self._thread_data.initialized:
-            try:
-                pythoncom.CoUninitialize()
-                self._thread_data.initialized = False
-            except Exception as e:
-                print(f"Error uninitializing COM: {e}")
-    
-    def is_com_initialized(self) -> bool:
-        """Check if COM is initialized for the current thread"""
-        return hasattr(self._thread_data, 'initialized') and self._thread_data.initialized
-
-
-def com_method(func):
-    """Decorator to ensure COM is initialized before calling COM methods"""
-    @wraps(func)
-    def wrapper(self, *args, **kwargs):
-        # Ensure COM is initialized for this thread
-        if not self._com_manager.initialize_com():
-            raise RuntimeError("Failed to initialize COM for current thread")
-        
-        # Ensure we have a valid COM object for this thread
-        if not hasattr(self._thread_local, 'vv_object') or self._thread_local.vv_object is None:
-            self._create_com_object_for_thread(skip_ready_check=(func.__name__ == "IsReady"))
-        
-        try:
-            return func(self, *args, **kwargs)
-        except Exception as e:
-            error_str = str(e)
-            # If COM error, try to recreate the object once
-            if any(keyword in error_str.lower() for keyword in ["com_error", "rpc", "coinitialize"]):
-                try:
-                    print(f"COM error detected, recreating object for thread {threading.get_ident()}")
-                    # Force COM reinitialization
-                    self._com_manager.uninitialize_com()
-                    if not self._com_manager.initialize_com():
-                        raise RuntimeError("Failed to reinitialize COM")
-                    self._create_com_object_for_thread(skip_ready_check=(func.__name__ == "IsReady"))
-                    return func(self, *args, **kwargs)
-                except Exception as retry_error:
-                    print(f"Retry failed: {retry_error}")
-                    raise e
-            raise e
-    
-    return wrapper
-
-
 class VibrationVIEW:
-    """Thread-safe VibrationVIEW COM interface for multi-threaded applications"""
-    
-    # Class-level COM manager shared across all instances
-    _com_manager = COMThreadManager()
-    
+    """Thread-safe VibrationVIEW COM interface.
+
+    All COM calls are marshaled to a dedicated worker thread, so this
+    class can be used safely from any thread.
+    """
+
     def __init__(self, connection_timeout: float = 10.0, retry_attempts: int = 5):
         """
         Initialize VibrationVIEW interface
-        
+
         Args:
             connection_timeout: Maximum time to wait for VibrationVIEW connection
             retry_attempts: Number of connection retry attempts
         """
-        self._thread_local = threading.local()
         self._connection_timeout = connection_timeout
         self._retry_attempts = retry_attempts
-        self._lock = threading.RLock()
-        
-        # Initialize COM for the current thread
-        if not self._com_manager.initialize_com():
-            raise RuntimeError("Failed to initialize COM")
-        
-        # Create initial COM object
-        self._create_com_object_for_thread()
-    
-    def _create_com_object_for_thread(self, skip_ready_check: bool = False):
-        """Create a new COM object for the current thread"""
-        thread_id = threading.get_ident()
-        
-        # Clear any existing object for this thread
-        if hasattr(self._thread_local, 'vv_object'):
-            self._thread_local.vv_object = None
-        
-        try:
-            # Ensure COM is initialized for this thread
-            if not self._com_manager.initialize_com():
-                raise RuntimeError("Failed to initialize COM for thread")
-            
-            # Create new COM object for this thread
-            print(f'Creating VibrationVIEW object for thread {thread_id}')
-            vv = win32com.client.Dispatch('VibrationVIEW.TestControl')
-            print(f'VibrationVIEW object created for thread {thread_id}')
-            
-            if skip_ready_check:
-                # Skip IsReady wait loop (e.g., when IsReady itself is being called)
-                self._thread_local.vv_object = vv
-                return
+        self._vv_object = None
+        self._lock = threading.Lock()
 
-            # Wait for VibrationVIEW to be ready with timeout
-            start_time = time.time()
-            wait_time = 0.5
-            
-            for attempt in range(1, self._retry_attempts + 1):
-                try:
-                    if vv and vv.IsReady:
-                        print(f'VibrationVIEW key is now valid for thread {thread_id}')
-                        self._thread_local.vv_object = vv
-                        return
-                except Exception as e:
-                    print(f'Thread {thread_id}, Attempt {attempt} failed: {e}')
-                    if time.time() - start_time > self._connection_timeout:
-                        raise TimeoutError(f"Connection timeout after {self._connection_timeout} seconds")
-                    
-                    if attempt == self._retry_attempts:
-                        raise RuntimeError('Failed to connect after multiple attempts')
-                
-                print(f'Thread {thread_id}, waiting {wait_time} seconds...')
-                time.sleep(wait_time)
-                wait_time = min(wait_time * 1.5, 2.0)  # Exponential backoff with cap
+        _ensure_worker()
+        self._create_com_object()
 
-            # Loop completed without IsReady becoming True; assign the
-            # object anyway so callers can poll IsReady() themselves.
-            print(f'Thread {thread_id}: VibrationVIEW not ready after {self._retry_attempts} attempts, assigning object anyway')
-            self._thread_local.vv_object = vv
+    def _create_com_object(self, skip_ready_check: bool = False):
+        """Create the COM object on the worker thread."""
+        with self._lock:
+            self._vv_object = None
+            timeout = self._connection_timeout
+            retries = self._retry_attempts
 
-        except Exception as e:
-            error_msg = f'Failed to connect to VibrationVIEW on thread {thread_id}: {ExtractComErrorInfo(e)}'
-            print(error_msg)
-            self._thread_local.vv_object = None
-            raise RuntimeError(error_msg)
-    
+            def _do_create():
+                print('Creating VibrationVIEW object on COM worker thread')
+                vv = win32com.client.Dispatch('VibrationVIEW.TestControl')
+                print('VibrationVIEW object created')
+
+                if skip_ready_check:
+                    return vv
+
+                # Wait for VibrationVIEW to be ready with timeout
+                start_time = time.time()
+                wait_time = 0.5
+
+                for attempt in range(1, retries + 1):
+                    try:
+                        if vv and vv.IsReady:
+                            print('VibrationVIEW key is now valid')
+                            return vv
+                    except Exception as e:
+                        print(f'Attempt {attempt} failed: {e}')
+                        if time.time() - start_time > timeout:
+                            raise TimeoutError(f"Connection timeout after {timeout} seconds")
+
+                        if attempt == retries:
+                            raise RuntimeError('Failed to connect after multiple attempts')
+
+                    print(f'Waiting {wait_time} seconds...')
+                    time.sleep(wait_time)
+                    wait_time = min(wait_time * 1.5, 2.0)
+
+                # Loop completed without IsReady becoming True; assign the
+                # object anyway so callers can poll IsReady() themselves.
+                print(f'VibrationVIEW not ready after {retries} attempts, assigning object anyway')
+                return vv
+
+            try:
+                future = _com_worker.submit(_do_create)
+                self._vv_object = future.result()
+            except Exception as e:
+                error_msg = f'Failed to connect to VibrationVIEW: {ExtractComErrorInfo(e)}'
+                print(error_msg)
+                self._vv_object = None
+                raise RuntimeError(error_msg)
+
     @property
     def vv(self):
-        """Get the COM object for the current thread"""
-        if not hasattr(self._thread_local, 'vv_object') or self._thread_local.vv_object is None:
-            self._create_com_object_for_thread()
-        return self._thread_local.vv_object
-    
+        """Get the COM object (for use on the worker thread only)."""
+        if self._vv_object is None:
+            self._create_com_object()
+        return self._vv_object
+
     def __del__(self):
         """Clean up COM resources"""
         self.close()
-    
+
     def close(self):
-        """Explicitly release COM resources for current thread"""
+        """Explicitly release COM resources."""
         try:
-            if hasattr(self._thread_local, 'vv_object') and self._thread_local.vv_object is not None:
-                self._thread_local.vv_object = None
-            
-            # Only uninitialize if we're in a thread that has COM initialized
-            if self._com_manager.is_com_initialized():
-                self._com_manager.uninitialize_com()
+            if self._vv_object is not None:
+                self._vv_object = None
         except Exception as e:
             print(f"Error during cleanup: {e}")
 
@@ -595,6 +494,7 @@ class VibrationVIEW:
         """
         tedsInfo = self.vv.TedsReadAndApply()
         return tedsInfo
+
     @com_method
     def TedsFromURN(self, urn: str) -> List[str]:
         """
@@ -619,12 +519,12 @@ class VibrationVIEW:
             allocatedStringArray = [[''] * 3 for _ in range(32)]
 
             channelsToCheck = [channel] if channel is not None else range(numChannels)
-            
+
             for ch in channelsToCheck:
                 try:
                     tedsInfo = self.vv.Teds(ch, allocatedStringArray)
                     teds_info_clean = [item for item in tedsInfo if item[0] and item[1]]
-                    
+
                     tedsData = {
                         "Channel": ch + 1,
                         "Teds": teds_info_clean
@@ -833,7 +733,7 @@ class VibrationVIEW:
             return bool(self.vv.InputAccelPowerSource(channel))
         else:
             # Use direct COM property assignment for indexed property
-            
+
             # Property ID 51 from COM interface, DISPATCH_PROPERTYPUT
             # For indexed properties with propput, pass arguments in correct order
             self.vv._oleobj_.Invoke(51, 0, pythoncom.DISPATCH_PROPERTYPUT, 0, channel, int(bool(value)))
@@ -889,22 +789,22 @@ class VibrationVIEW:
     def RecordStart(self) -> bool:
         """Start recording data"""
         return self.vv.RecordStart()
-    
+
     @com_method
     def RecordStop(self) -> bool:
         """Stop recording data"""
         return self.vv.RecordStop()
-    
+
     @com_method
     def RecordPause(self) -> bool:
         """Pause recording data"""
         return self.vv.RecordPause()
-    
+
     @com_method
     def RecordGetFilename(self) -> str:
         """Get the last recording's filename"""
         return self.vv.RecordGetFilename
-    
+
     @com_method
     def SetInputConfigurationFile(self, configName: str) -> bool:
         """Load input configuration file"""
@@ -973,66 +873,54 @@ class VibrationVIEW:
         return True
 
 
-# Singleton pattern for shared VibrationVIEW instance in web applications
 class VibrationVIEWPool:
-    """Thread-safe pool manager for VibrationVIEW instances"""
-    
+    """Kept for backward compatibility. Returns the same VibrationVIEW instance
+    since all COM calls are now serialized through a single worker thread."""
+
     def __init__(self, max_instances: int = 5):
-        self._max_instances = max_instances
-        self._instances = []
-        self._lock = threading.RLock()
-        self._thread_local = threading.local()
-    
+        self._instance = None
+        self._lock = threading.Lock()
+
     def get_instance(self) -> VibrationVIEW:
-        """Get a VibrationVIEW instance for the current thread"""
-        # Check if current thread already has an instance
-        if hasattr(self._thread_local, 'instance'):
-            return self._thread_local.instance
-        
+        """Get a VibrationVIEW instance."""
         with self._lock:
-            # Try to reuse an existing instance
-            if self._instances:
-                instance = self._instances.pop()
-            else:
-                # Create new instance if under limit
-                instance = VibrationVIEW()
-            
-            self._thread_local.instance = instance
-            return instance
-    
+            if self._instance is None:
+                self._instance = VibrationVIEW()
+            return self._instance
+
     def return_instance(self, instance: VibrationVIEW):
-        """Return an instance to the pool"""
-        with self._lock:
-            if len(self._instances) < self._max_instances:
-                self._instances.append(instance)
-            else:
-                instance.close()
-        
-        # Clear thread local reference
-        if hasattr(self._thread_local, 'instance'):
-            delattr(self._thread_local, 'instance')
+        """No-op; the instance is shared."""
+        pass
 
 
 # Global pool instance for Flask applications
-_vv_pool = VibrationVIEWPool()
+_vv_pool = None
+_vv_pool_lock = threading.Lock()
+
+def _get_pool():
+    global _vv_pool
+    if _vv_pool is None:
+        with _vv_pool_lock:
+            if _vv_pool is None:
+                _vv_pool = VibrationVIEWPool()
+    return _vv_pool
 
 def get_vibrationview() -> VibrationVIEW:
     """Get a thread-safe VibrationVIEW instance for Flask applications"""
-    return _vv_pool.get_instance()
+    return _get_pool().get_instance()
 
 def return_vibrationview(instance: VibrationVIEW):
-    """Return a VibrationVIEW instance to the pool"""
-    _vv_pool.return_instance(instance)
+    """Return a VibrationVIEW instance (no-op with worker thread model)"""
+    _get_pool().return_instance(instance)
 
 
 # Context manager for easy use in Flask routes
 class VibrationVIEWContext:
     """Context manager for VibrationVIEW instances"""
-    
+
     def __enter__(self) -> VibrationVIEW:
         self.instance = get_vibrationview()
         return self.instance
-    
+
     def __exit__(self, exc_type, exc_val, exc_tb):
         return_vibrationview(self.instance)
-
