@@ -94,6 +94,7 @@ class COMWorkerThread:
                         future.set_result(result)
                     except BaseException as exc:
                         future.set_exception(exc)
+                del item, future, fn, args, kwargs
         finally:
             pythoncom.CoUninitialize()
 
