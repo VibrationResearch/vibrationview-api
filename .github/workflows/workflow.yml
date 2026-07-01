@@ -64,7 +64,7 @@ jobs:
     - name: Install pinned dependencies
       run: |
         python -m pip install --upgrade pip
-        grep -v pywin32 requirements.txt requirements-dev.txt | grep '==' | pip install -r /dev/stdin
+        grep -hv pywin32 requirements.txt requirements-dev.txt | grep '==' | pip install -r /dev/stdin
     - name: Check for outdated packages
       run: |
         outdated=$(pip list --outdated --format=columns 2>/dev/null || true)
