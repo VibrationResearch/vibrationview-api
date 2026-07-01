@@ -37,8 +37,8 @@ jobs:
         file: ./coverage.xml
         fail_ci_if_error: false
 
-  mypy:
-    runs-on: windows-latest
+  lint:
+    runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
     - name: Set up Python
@@ -49,6 +49,12 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         python -m pip install -e .[dev]
+    - name: Run ruff check
+      run: |
+        ruff check src/vibrationviewapi/
+    - name: Run ruff format check
+      run: |
+        ruff format --check src/vibrationviewapi/
     - name: Run mypy
       run: |
         mypy src/vibrationviewapi/
@@ -76,7 +82,7 @@ jobs:
         fi
 
   build-and-publish:
-    needs: [test, mypy]
+    needs: [test, lint]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/')
     environment:
