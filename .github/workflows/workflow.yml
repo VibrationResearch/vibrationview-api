@@ -53,6 +53,28 @@ jobs:
       run: |
         mypy src/vibrationviewapi/
 
+  check-deps:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+    - name: Install pinned dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt -r requirements-dev.txt
+    - name: Check for outdated packages
+      run: |
+        outdated=$(pip list --outdated --format=columns 2>/dev/null || true)
+        if [ -n "$outdated" ]; then
+          echo "::warning::Outdated pinned dependencies found"
+          echo "$outdated"
+        else
+          echo "All pinned dependencies are up to date."
+        fi
+
   build-and-publish:
     needs: [test, mypy]
     runs-on: ubuntu-latest
