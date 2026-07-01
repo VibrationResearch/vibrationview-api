@@ -3,7 +3,9 @@ import subprocess
 import os
 from . import config
 
-def _generate_file_from_vv(filePath: str, outputName: str, operation: str, template_name: str = None) -> str:
+from typing import Optional
+
+def _generate_file_from_vv(filePath: str, outputName: str, operation: str, template_name: Optional[str] = None) -> str:
     """
     Common function to generate files from VibrationVIEW via command line.
 
