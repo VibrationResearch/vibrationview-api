@@ -6,7 +6,11 @@ from . import config
 
 
 def _generate_file_from_vv(
-    filePath: str, outputName: str, operation: str, template_name: Optional[str] = None
+    filePath: str,
+    outputName: str,
+    operation: str,
+    template_name: Optional[str] = None,
+    timeout: float = 20,
 ) -> str:
     """
     Common function to generate files from VibrationVIEW via command line.
@@ -16,6 +20,7 @@ def _generate_file_from_vv(
         outputName (str): Desired name of the generated file
         operation (str): Operation type ('/savereport', '/txt', '/uff')
         template_name (str, optional): Name of the report template for report generation
+        timeout (float): Timeout in seconds for the subprocess (default 20)
 
     Returns:
         str: Path to the generated file
@@ -44,7 +49,7 @@ def _generate_file_from_vv(
         command.insert(4, template_name)
 
     # Run command
-    result = subprocess.run(command, capture_output=True, text=True)
+    result = subprocess.run(command, capture_output=True, text=True, timeout=timeout)
 
     if result.returncode != 0:
         operation_name = operation.lstrip("/")
@@ -57,7 +62,9 @@ def _generate_file_from_vv(
     return outPath
 
 
-def GenerateReportFromVV(filePath: str, templateName: str, outputName: str) -> str:
+def GenerateReportFromVV(
+    filePath: str, templateName: str, outputName: str, timeout: float = 20
+) -> str:
     """
     Runs the external report generator,
     and returns the path to the generated report.
@@ -66,14 +73,15 @@ def GenerateReportFromVV(filePath: str, templateName: str, outputName: str) -> s
         filePath (str): The VV filename
         templateName (str): Name of the report template to use
         outputName (str): Desired name of the generated report file
+        timeout (float): Timeout in seconds for the subprocess (default 20)
 
     Returns:
         str: Path to the generated report file
     """
-    return _generate_file_from_vv(filePath, outputName, "/savereport", templateName)
+    return _generate_file_from_vv(filePath, outputName, "/savereport", templateName, timeout=timeout)
 
 
-def GenerateTXTFromVV(filePath: str, outputName: str) -> str:
+def GenerateTXTFromVV(filePath: str, outputName: str, timeout: float = 20) -> str:
     """
     Runs the conversion to TXT from commandline,
     and returns the path to the generated text file.
@@ -81,14 +89,15 @@ def GenerateTXTFromVV(filePath: str, outputName: str) -> str:
     Args:
         filePath (str): The VV filename
         outputName (str): Desired name of the generated text file
+        timeout (float): Timeout in seconds for the subprocess (default 20)
 
     Returns:
         str: Path to the generated text file
     """
-    return _generate_file_from_vv(filePath, outputName, "/txt")
+    return _generate_file_from_vv(filePath, outputName, "/txt", timeout=timeout)
 
 
-def GenerateUFFFromVV(filePath: str, outputName: str) -> str:
+def GenerateUFFFromVV(filePath: str, outputName: str, timeout: float = 20) -> str:
     """
     Runs the conversion to UFF from commandline,
     and returns the path to the generated UFF file.
@@ -96,8 +105,9 @@ def GenerateUFFFromVV(filePath: str, outputName: str) -> str:
     Args:
         filePath (str): The VV filename
         outputName (str): Desired name of the generated UFF file
+        timeout (float): Timeout in seconds for the subprocess (default 20)
 
     Returns:
         str: Path to the generated UFF file
     """
-    return _generate_file_from_vv(filePath, outputName, "/uff")
+    return _generate_file_from_vv(filePath, outputName, "/uff", timeout=timeout)
