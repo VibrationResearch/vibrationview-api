@@ -8,6 +8,8 @@ All COM calls are marshaled to a single dedicated worker thread that owns
 the COM object, ensuring correct COM apartment threading behavior.
 """
 
+from typing import Optional
+
 import win32com.client
 import pythoncom
 import time
@@ -878,7 +880,7 @@ class VibrationVIEWPool:
     since all COM calls are now serialized through a single worker thread."""
 
     def __init__(self, max_instances: int = 5):
-        self._instance = None
+        self._instance: Optional[VibrationVIEW] = None
         self._lock = threading.Lock()
 
     def get_instance(self) -> VibrationVIEW:
@@ -894,15 +896,16 @@ class VibrationVIEWPool:
 
 
 # Global pool instance for Flask applications
-_vv_pool = None
+_vv_pool: Optional[VibrationVIEWPool] = None
 _vv_pool_lock = threading.Lock()
 
-def _get_pool():
+def _get_pool() -> VibrationVIEWPool:
     global _vv_pool
     if _vv_pool is None:
         with _vv_pool_lock:
             if _vv_pool is None:
                 _vv_pool = VibrationVIEWPool()
+    assert _vv_pool is not None
     return _vv_pool
 
 def get_vibrationview() -> VibrationVIEW:
