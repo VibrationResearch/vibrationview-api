@@ -8,18 +8,16 @@ All COM calls are marshaled to a single dedicated worker thread that owns
 the COM object, ensuring correct COM apartment threading behavior.
 """
 
-from typing import Optional
-
-import win32com.client
-import pythoncom
-import time
 import threading
+import time
+from typing import Any, List, Optional, Union
 
-from .vv_enums import vvVector, vvTestType
+import pythoncom
+import win32com.client
+
 from .comhelper import ExtractComErrorInfo
 from .comworker import _com_worker, _ensure_worker, com_method
-
-from typing import List, Union, Optional, Any
+from .vv_enums import vvTestType, vvVector
 
 
 class VibrationVIEW:
@@ -53,9 +51,9 @@ class VibrationVIEW:
             retries = self._retry_attempts
 
             def _do_create():
-                print('Creating VibrationVIEW object on COM worker thread')
-                vv = win32com.client.Dispatch('VibrationVIEW.TestControl')
-                print('VibrationVIEW object created')
+                print("Creating VibrationVIEW object on COM worker thread")
+                vv = win32com.client.Dispatch("VibrationVIEW.TestControl")
+                print("VibrationVIEW object created")
 
                 if skip_ready_check:
                     return vv
@@ -67,30 +65,30 @@ class VibrationVIEW:
                 for attempt in range(1, retries + 1):
                     try:
                         if vv and vv.IsReady:
-                            print('VibrationVIEW key is now valid')
+                            print("VibrationVIEW key is now valid")
                             return vv
                     except Exception as e:
-                        print(f'Attempt {attempt} failed: {e}')
+                        print(f"Attempt {attempt} failed: {e}")
                         if time.time() - start_time > timeout:
                             raise TimeoutError(f"Connection timeout after {timeout} seconds")
 
                         if attempt == retries:
-                            raise RuntimeError('Failed to connect after multiple attempts')
+                            raise RuntimeError("Failed to connect after multiple attempts")
 
-                    print(f'Waiting {wait_time} seconds...')
+                    print(f"Waiting {wait_time} seconds...")
                     time.sleep(wait_time)
                     wait_time = min(wait_time * 1.5, 2.0)
 
                 # Loop completed without IsReady becoming True; assign the
                 # object anyway so callers can poll IsReady() themselves.
-                print(f'VibrationVIEW not ready after {retries} attempts, assigning object anyway')
+                print(f"VibrationVIEW not ready after {retries} attempts, assigning object anyway")
                 return vv
 
             try:
                 future = _com_worker.submit(_do_create)
                 self._vv_object = future.result()
             except Exception as e:
-                error_msg = f'Failed to connect to VibrationVIEW: {ExtractComErrorInfo(e)}'
+                error_msg = f"Failed to connect to VibrationVIEW: {ExtractComErrorInfo(e)}"
                 print(error_msg)
                 self._vv_object = None
                 raise RuntimeError(error_msg)
@@ -180,7 +178,7 @@ class VibrationVIEW:
     def Status(self) -> dict:
         """Get VibrationVIEW Status"""
         stop_code, stop_code_index = self.vv.Status()
-        return {'stop_code': stop_code, 'stop_code_index': stop_code_index}
+        return {"stop_code": stop_code, "stop_code_index": stop_code_index}
 
     @com_method
     def IsRunning(self) -> bool:
@@ -367,7 +365,9 @@ class VibrationVIEW:
         return result
 
     @com_method
-    def ReportVectorHistory(self, vectors: str, array_out: Optional[List] = None, header_out: Optional[List] = None) -> tuple:
+    def ReportVectorHistory(
+        self, vectors: str, array_out: Optional[List] = None, header_out: Optional[List] = None
+    ) -> tuple:
         """
         Get report vector data from history files.
 
@@ -518,7 +518,7 @@ class VibrationVIEW:
         try:
             numChannels = self.GetHardwareInputChannels()
             """ descriptor, value, unit for up to 32 TEDS fields """
-            allocatedStringArray = [[''] * 3 for _ in range(32)]
+            allocatedStringArray = [[""] * 3 for _ in range(32)]
 
             channelsToCheck = [channel] if channel is not None else range(numChannels)
 
@@ -527,10 +527,7 @@ class VibrationVIEW:
                     tedsInfo = self.vv.Teds(ch, allocatedStringArray)
                     teds_info_clean = [item for item in tedsInfo if item[0] and item[1]]
 
-                    tedsData = {
-                        "Channel": ch + 1,
-                        "Teds": teds_info_clean
-                    }
+                    tedsData = {"Channel": ch + 1, "Teds": teds_info_clean}
                     allTedsData.append(tedsData)
 
                 except Exception as e:
@@ -725,7 +722,9 @@ class VibrationVIEW:
         else:
             # Use direct COM property assignment for indexed property
             # Property ID 50 from COM interface, DISPATCH_PROPERTYPUT
-            self.vv._oleobj_.Invoke(50, 0, pythoncom.DISPATCH_PROPERTYPUT, 0, channel, int(bool(value)))
+            self.vv._oleobj_.Invoke(
+                50, 0, pythoncom.DISPATCH_PROPERTYPUT, 0, channel, int(bool(value))
+            )
             return bool(value)
 
     @com_method
@@ -738,7 +737,9 @@ class VibrationVIEW:
 
             # Property ID 51 from COM interface, DISPATCH_PROPERTYPUT
             # For indexed properties with propput, pass arguments in correct order
-            self.vv._oleobj_.Invoke(51, 0, pythoncom.DISPATCH_PROPERTYPUT, 0, channel, int(bool(value)))
+            self.vv._oleobj_.Invoke(
+                51, 0, pythoncom.DISPATCH_PROPERTYPUT, 0, channel, int(bool(value))
+            )
             return bool(value)
 
     @com_method
@@ -749,7 +750,9 @@ class VibrationVIEW:
         else:
             # Use direct COM property assignment for indexed property
             # Property ID 52 from COM interface (assuming next ID after 51), DISPATCH_PROPERTYPUT
-            self.vv._oleobj_.Invoke(52, 0, pythoncom.DISPATCH_PROPERTYPUT, 0, channel, int(bool(value)))
+            self.vv._oleobj_.Invoke(
+                52, 0, pythoncom.DISPATCH_PROPERTYPUT, 0, channel, int(bool(value))
+            )
             return bool(value)
 
     @com_method
@@ -763,12 +766,16 @@ class VibrationVIEW:
         return self.vv.InputEngineeringScale(channel)
 
     @com_method
-    def InputMode(self, channel: int, powerSource: bool, capCoupled: bool, differential: bool) -> bool:
+    def InputMode(
+        self, channel: int, powerSource: bool, capCoupled: bool, differential: bool
+    ) -> bool:
         """Set input mode for a channel"""
         return self.vv.InputMode(channel, powerSource, capCoupled, differential)
 
     @com_method
-    def InputCalibration(self, channel: int, sensitivity: float, serialNumber: str, calDate: str) -> bool:
+    def InputCalibration(
+        self, channel: int, sensitivity: float, serialNumber: str, calDate: str
+    ) -> bool:
         """Set input calibration for a channel"""
         return self.vv.InputCalibration(channel, sensitivity, serialNumber, calDate)
 
@@ -899,6 +906,7 @@ class VibrationVIEWPool:
 _vv_pool: Optional[VibrationVIEWPool] = None
 _vv_pool_lock = threading.Lock()
 
+
 def _get_pool() -> VibrationVIEWPool:
     global _vv_pool
     if _vv_pool is None:
@@ -908,9 +916,11 @@ def _get_pool() -> VibrationVIEWPool:
     assert _vv_pool is not None
     return _vv_pool
 
+
 def get_vibrationview() -> VibrationVIEW:
     """Get a thread-safe VibrationVIEW instance for Flask applications"""
     return _get_pool().get_instance()
+
 
 def return_vibrationview(instance: VibrationVIEW):
     """Return a VibrationVIEW instance (no-op with worker thread model)"""

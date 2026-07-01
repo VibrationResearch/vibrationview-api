@@ -6,11 +6,12 @@ COM apartment threading. All COM calls are submitted as callables to a
 queue and executed on the worker thread.
 """
 
-import pythoncom
-import threading
 import queue
+import threading
 from concurrent.futures import Future
 from functools import wraps
+
+import pythoncom
 
 
 class COMWorkerThread:
@@ -114,6 +115,7 @@ def _ensure_worker():
 
 def com_method(func):
     """Decorator that marshals COM method calls to the worker thread."""
+
     @wraps(func)
     def wrapper(self, *args, **kwargs):
         _ensure_worker()
@@ -121,7 +123,7 @@ def com_method(func):
         # Define an inner helper function that executes ENTIRELY on the background thread
         def _execute_on_thread():
             # Check and create the object strictly on the COM thread context
-            if getattr(self, '_vv_object', None) is None:
+            if getattr(self, "_vv_object", None) is None:
                 self._create_com_object()
             return func(self, *args, **kwargs)
 

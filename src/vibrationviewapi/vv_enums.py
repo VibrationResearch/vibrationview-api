@@ -9,6 +9,7 @@ import enum
 
 class vvVector(enum.IntEnum):
     """VibrationVIEW vector enumeration for data access"""
+
     WAVEFORMAXIS = 0
     WAVEFORM1 = 1
     WAVEFORM2 = 2
@@ -264,13 +265,14 @@ class vvVector(enum.IntEnum):
 
 class vvTestType(enum.IntEnum):
     """VibrationVIEW test type enumeration"""
+
     TEST_SYSCHECK = 0
     TEST_SINE = 1
     TEST_RANDOM = 2
     TEST_SHOCK = 4
     TEST_TRANSIENT = 5
     TEST_REPLAY = 6
-    
+
     @classmethod
     def get_name(cls, value):
         """Get a human-readable name for the test type"""
