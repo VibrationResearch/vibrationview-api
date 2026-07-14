@@ -78,7 +78,9 @@ def GenerateReportFromVV(
     Returns:
         str: Path to the generated report file
     """
-    return _generate_file_from_vv(filePath, outputName, "/savereport", templateName, timeout=timeout)
+    return _generate_file_from_vv(
+        filePath, outputName, "/savereport", templateName, timeout=timeout
+    )
 
 
 def GenerateTXTFromVV(filePath: str, outputName: str, timeout: float = 20) -> str:
