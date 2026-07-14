@@ -15,12 +15,12 @@ Usage:
     pytest test_report_vector.py -v
 """
 
+import logging
 import os
 import sys
 import time
-import logging
+
 import pytest
-from .conftest import requires_vv
 
 # Configure logger
 logger = logging.getLogger(__name__)
@@ -262,7 +262,7 @@ class TestReportVectorFunctions:
             vector_names = "Index,Frequency,Demand,Control,Drive,Channel1,Channel2"
 
             try:
-                logger.info(f"Testing ReportVectorHistory while test is running (should fail)")
+                logger.info("Testing ReportVectorHistory while test is running (should fail)")
                 result = self.vv.ReportVectorHistory(vector_names, None, None)
 
                 # If we get here without exception, the call succeeded when it should have failed

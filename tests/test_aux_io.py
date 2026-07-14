@@ -15,12 +15,11 @@ Usage:
     pytest test_aux_io.py -v
 """
 
+import logging
 import os
 import sys
-import time
-import logging
+
 import pytest
-from datetime import datetime
 
 # Configure logger
 logger = logging.getLogger(__name__)
@@ -32,7 +31,12 @@ sys.path.append(src_dir)
 
 try:
     # Import main VibrationVIEW API
-    from vibrationviewapi import VibrationVIEW, vvVector, vvTestType, ExtractComErrorInfo
+    from vibrationviewapi import (  # noqa: F401
+        ExtractComErrorInfo,
+        VibrationVIEW,
+        vvTestType,
+        vvVector,
+    )
 except ImportError:
     pytest.skip("Could not import VibrationVIEW API. Make sure they are in the same directory or in your Python path.", allow_module_level=True)
 

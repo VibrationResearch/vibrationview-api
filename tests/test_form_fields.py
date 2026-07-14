@@ -11,13 +11,12 @@ Prerequisites:
 - pytest library installed (pip install pytest)
 """
 
+import logging
 import os
 import sys
-import time
-import logging
-import pytest
 from urllib.parse import unquote
-from .conftest import requires_vv
+
+import pytest
 
 # Configure logger
 logger = logging.getLogger(__name__)
@@ -86,7 +85,7 @@ class TestFormFields:
         except Exception as e:
             error_info = ExtractComErrorInfo(e)
             if "No data available" in str(error_info):
-                logger.info(f"FormFields: No data available (valid result)")
+                logger.info("FormFields: No data available (valid result)")
                 return  # Pass the test - no data is a valid state
             logger.error(f"FormFields test failed: {error_info}")
             pytest.fail(f"FormFields test failed: {error_info}")
@@ -135,7 +134,7 @@ class TestFormFields:
         except Exception as e:
             error_info = ExtractComErrorInfo(e)
             if "No data available" in str(error_info):
-                logger.info(f"PostFormFields: No data available (valid result)")
+                logger.info("PostFormFields: No data available (valid result)")
                 return  # Pass the test
             logger.error(f"PostFormFields test failed: {error_info}")
             pytest.fail(f"PostFormFields test failed: {error_info}")
@@ -177,7 +176,7 @@ class TestFormFields:
         except Exception as e:
             error_info = ExtractComErrorInfo(e)
             if "No data available" in str(error_info):
-                logger.info(f"PostFormFields merge test: No data available (valid result)")
+                logger.info("PostFormFields merge test: No data available (valid result)")
                 return  # Pass the test
             logger.error(f"PostFormFields merge test failed: {error_info}")
             pytest.fail(f"PostFormFields merge test failed: {error_info}")
@@ -219,7 +218,7 @@ class TestFormFields:
                 ["Field!@#$%", "Value!@#$%^&*()"],
             ]
 
-            logger.info(f"Testing PostFormFields with special characters")
+            logger.info("Testing PostFormFields with special characters")
             for field_name, field_value in test_fields:
                 logger.info(f"  Testing field: '{field_name}' = '{field_value}'")
 

@@ -7,15 +7,14 @@ should assign the COM object immediately without polling IsReady in a retry loop
 import os
 import sys
 import time
-import pytest
-from unittest.mock import patch, PropertyMock
+from unittest.mock import PropertyMock, patch
 
 # Ensure src/ is on the path
 current_dir = os.path.abspath(os.path.dirname(__file__))
 src_dir = os.path.join(current_dir, "..", "src")
 sys.path.insert(0, src_dir)
 
-from .mock_com import MockCOMObject
+from .mock_com import MockCOMObject  # noqa: E402
 
 
 class TestIsReadySkipsWaitLoop:
@@ -65,7 +64,7 @@ class TestIsReadySkipsWaitLoop:
             from vibrationviewapi import VibrationVIEW
 
             start = time.monotonic()
-            vv = VibrationVIEW(connection_timeout=1, retry_attempts=2)
+            VibrationVIEW(connection_timeout=1, retry_attempts=2)
             elapsed = time.monotonic() - start
 
             # Constructor should have spent time in the retry/wait loop

@@ -5,8 +5,9 @@ conftest.py - Pytest configuration and shared fixtures for VibrationVIEW tests
 import os
 import sys
 import time
-import pytest
 from datetime import datetime
+
+import pytest
 
 # Get the absolute path of the current file's directory
 current_dir = os.path.abspath(os.path.dirname(__file__))
@@ -22,8 +23,8 @@ sys.path.insert(0, src_dir)
 VV_COM_AVAILABLE = False
 if not os.environ.get('VV_USE_MOCK'):
     try:
-        import win32com.client
         import pythoncom
+        import win32com.client
         pythoncom.CoInitialize()
         _test_obj = win32com.client.Dispatch('VibrationVIEW.TestControl')
         VV_COM_AVAILABLE = True
@@ -36,6 +37,7 @@ if not os.environ.get('VV_USE_MOCK'):
 _mock_patcher = None
 if not VV_COM_AVAILABLE:
     from unittest.mock import patch
+
     from .mock_com import create_mock_com_object
     _replayer = create_mock_com_object()
     _mock_patcher = patch('win32com.client.Dispatch', return_value=_replayer)
@@ -53,7 +55,12 @@ requires_vv_live = pytest.mark.skipif(
 
 try:
     # Import main VibrationVIEW API
-    from vibrationviewapi import VibrationVIEW, vvVector, vvTestType, ExtractComErrorInfo
+    from vibrationviewapi import (  # noqa: F401
+        ExtractComErrorInfo,
+        VibrationVIEW,
+        vvTestType,
+        vvVector,
+    )
 
 except ImportError:
     pytest.skip("Could not import VibrationVIEW API. Make sure they are in the same directory or in your Python path.", allow_module_level=True)

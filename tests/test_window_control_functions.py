@@ -15,12 +15,12 @@ Usage:
     pytest test_window_control_functions.py -v
 """
 
+import logging
 import os
 import sys
 import time
-import logging
-import pytest
 
+import pytest
 
 # Configure logger
 logger = logging.getLogger(__name__)
@@ -37,8 +37,8 @@ sys.path.append(src_dir)
 
 try:
     # Import main VibrationVIEW API
-    from vibrationviewapi import VibrationVIEW, ExtractComErrorInfo
-    
+    from vibrationviewapi import ExtractComErrorInfo, VibrationVIEW  # noqa: F401
+
 except ImportError:
     logger.info("Could not importVibrationVIEW API.")
     pytest.skip("Could not import VibrationVIEW API. Make sure they are in the same directory or in your Python path.", allow_module_level=True)
@@ -46,16 +46,16 @@ except ImportError:
 # Try to import window process utilities
 WINDOW_UTILS_AVAILABLE = False
 try:
-    import window_process_state
+    import window_process_state  # noqa: F401
     from window_process_state import (
         find_vibrationview_windows,
         get_window_state,
-        is_window_minimized,
         is_window_maximized,
+        is_window_minimized,
     )
     WINDOW_UTILS_AVAILABLE = True
     logger.info("Successfully imported window_process_state utilities")
-except ImportError as e:
+except ImportError:
     logger.info("Could not import window_process_state.py")
     pytest.skip("Could not import window_process_state.py. Make sure they are in the same directory or in your Python path.", allow_module_level=True)
 
@@ -83,7 +83,7 @@ class TestVibrationVIEWWindow:
         try:
             assert self.vv is not None
             logger.info("Connection to VibrationVIEW established")
-            
+
             # Skip test if no windows found - likely vv is minimized to the tooltray
             if not self.window_handles:
                 pytest.skip("No VibrationVIEW windows found")
@@ -94,16 +94,16 @@ class TestVibrationVIEWWindow:
         except Exception as e:
             logger.error(f"Unexpected error in connection test: {str(e)}")
             raise
-    
+
     @pytest.mark.window
     def test_window_control(self):
         """Test window control functions using the VibrationVIEW API"""
         if not self.window_handles:
             pytest.skip("No VibrationVIEW windows found")
             return
-            
+
         hwnd, _, _ = self.window_handles[0]  # Get the first window handle
-        
+
         # Maximize
         try:
             self.vv.Maximize()
@@ -125,7 +125,7 @@ class TestVibrationVIEWWindow:
         try:
             self.vv.Minimize()
             logger.info("Window minimized via API")
-            
+
             # Verify window state using process check
             time.sleep(0.5)  # Allow time for the window to change state
             assert is_window_minimized(hwnd), "Window was not minimized"
@@ -137,12 +137,12 @@ class TestVibrationVIEWWindow:
             error_info = ExtractComErrorInfo(e) if 'ExtractComErrorInfo' in locals() else str(e)
             logger.error(f"Error during window minimize: {error_info}")
             raise
-        
+
         # Restore
         try:
             self.vv.Restore()
             logger.info("Window restored via API")
-            
+
             # Verify window state using process check
             time.sleep(0.5)  # Allow time for the window to change state
             assert not is_window_minimized(hwnd), "Window is still minimized"
@@ -163,19 +163,19 @@ class TestVibrationVIEWWindow:
             error_info = ExtractComErrorInfo(e) if 'ExtractComErrorInfo' in locals() else str(e)
             logger.error(f"Error during window activation: {error_info}")
             raise
-    
+
     @pytest.mark.window
     def test_all_vibrationview_windows(self):
         """Test detection of all VibrationVIEW windows"""
         # Find all VibrationVIEW windows
         try:
             windows = find_vibrationview_windows()
-            
+
             if not windows:
                 logger.warning("No VibrationVIEW windows found")
                 pytest.skip("No VibrationVIEW windows found")
                 return
-            
+
             logger.info(f"Found {len(windows)} VibrationVIEW windows:")
             for hwnd, pid, title in windows:
                 try:
@@ -183,7 +183,7 @@ class TestVibrationVIEWWindow:
                     logger.info(f"  - '{title}' is in {state} state (hwnd={hwnd}, pid={pid})")
                 except Exception as e:
                     logger.error(f"Error getting window state for '{title}': {str(e)}")
-            
+
             # Verify that we have at least one window
             assert len(windows) > 0, "Expected at least one VibrationVIEW window"
         except AssertionError as e:
@@ -204,7 +204,7 @@ if __name__ == "__main__":
             logging.StreamHandler(sys.stdout)
         ]
     )
-    
+
     print("="*80)
     print("VibrationVIEW Window Control Functions Test")
     print("="*80)

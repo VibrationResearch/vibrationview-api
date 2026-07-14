@@ -415,7 +415,8 @@ class MockCOMObject:
     def RecordStart(self):
         self._recording = True
         self._record_counter += 1
-        import tempfile, os
+        import os
+        import tempfile
         self._record_filename = os.path.join(
             tempfile.gettempdir(),
             f"mock_recording_{self._record_counter}.vrd",

@@ -5,11 +5,11 @@ Tests for Virtual Channel functions in VibrationVIEW API
 Tests ImportVirtualChannels and RemoveAllVirtualChannels functions.
 """
 
+import logging
 import os
 import sys
-import logging
+
 import pytest
-from .conftest import requires_vv_live
 
 # Path to vchan files in repo
 _inputconfig_folder = os.path.join(os.path.abspath(os.path.dirname(__file__)), '..', 'inputconfig')
@@ -31,7 +31,7 @@ src_dir = os.path.join(current_dir, '..', 'src')
 sys.path.insert(0, src_dir)
 
 try:
-    from vibrationviewapi import VibrationVIEW, ExtractComErrorInfo
+    from vibrationviewapi import ExtractComErrorInfo, VibrationVIEW  # noqa: F401
 except ImportError:
     pytest.skip("Could not import VibrationVIEW API.", allow_module_level=True)
 

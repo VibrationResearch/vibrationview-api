@@ -16,15 +16,12 @@ Usage:
 Note: Some tests may be skipped if not applicable to the current setup.
 """
 
+import logging
 import os
 import sys
 import time
-import logging
-import pytest
-from datetime import datetime
-from .conftest import requires_vv
 
-from .channelconfigs import get_channel_config
+import pytest
 
 # Configure logger
 logger = logging.getLogger(__name__)
@@ -40,20 +37,25 @@ sys.path.insert(0, src_dir)
 
 try:
     # Import main VibrationVIEW API
-    from vibrationviewapi import VibrationVIEW, vvVector, vvTestType, ExtractComErrorInfo
-    
+    from vibrationviewapi import (  # noqa: F401
+        ExtractComErrorInfo,
+        VibrationVIEW,
+        vvTestType,
+        vvVector,
+    )
+
 except ImportError:
     pytest.skip("Could not import VibrationVIEW API. Make sure they are in the same directory or in your Python path.", allow_module_level=True)
 
 class TestVibrationVIEW:
     """Test class for VibrationVIEW pytest implementation"""
-    
+
     @pytest.mark.connection
     def test_connection(self):
         """Test connection to VibrationVIEW"""
         assert self.vv is not None
         logger.info("Connection to VibrationVIEW established")
-    
+
     @pytest.mark.connection
     def test_basic_properties(self):
         """Test basic property getters"""
@@ -62,25 +64,25 @@ class TestVibrationVIEW:
         assert inputs is not None
         assert inputs in [4, 8, 12, 16, 32]
         logger.info(f"Hardware has {inputs} input channels")
-      
+
         outputs = self.vv.GetHardwareOutputChannels()
         assert outputs is not None
         assert outputs in [1, 2, 3, 4]
         logger.info(f"Hardware has {outputs} output channels")
-        
+
         serial = self.vv.GetHardwareSerialNumber()
         assert serial is not None
         logger.info(f"Hardware serial number: {serial}")
-        
+
         version = self.vv.GetSoftwareVersion()
         assert version is not None
         logger.info(f"Software version: {version}")
-        
+
         is_ready = self.vv.IsReady()
         assert is_ready is True
         logger.info("VibrationVIEW is ready")
-    
-   
+
+
     @pytest.mark.channels
     def test_channel_info(self):
         """Test channel information for all available channels"""
@@ -89,11 +91,11 @@ class TestVibrationVIEW:
             assert num_channels is not None
             assert num_channels > 0
             logger.info(f"Testing {num_channels} hardware channels")
-            
+
             # Test all available channels
             for channel_index in range(num_channels):
                 logger.info(f"Testing channel {channel_index+1}")
-                
+
                 # Get channel label
                 try:
                     label = self.vv.ChannelLabel(channel_index)
@@ -103,7 +105,7 @@ class TestVibrationVIEW:
                     error_info = ExtractComErrorInfo(e)
                     logger.error(f"Error getting channel label: {error_info}")
                     pytest.fail(f"Error getting channel label: {error_info}")
-                
+
                 # Get channel unit
                 try:
                     unit = self.vv.ChannelUnit(channel_index)
@@ -113,7 +115,7 @@ class TestVibrationVIEW:
                     error_info = ExtractComErrorInfo(e)
                     logger.error(f"Error getting channel unit: {error_info}")
                     pytest.fail(f"Error getting channel unit: {error_info}")
-                
+
                 # Try to get sensitivity
                 try:
                     sensitivity = self.vv.InputSensitivity(channel_index)
@@ -124,7 +126,7 @@ class TestVibrationVIEW:
                     logger.warning(f"Channel {channel_index+1} sensitivity: {error_info}")
                     # This might fail for some channels, so just note it
                     pytest.xfail(f"Could not get sensitivity for channel {channel_index+1}")
-                
+
                 # Try to get TEDS data
                 try:
                     # Create an array to receive the TEDS data
@@ -136,64 +138,64 @@ class TestVibrationVIEW:
                     logger.warning(f"Channel {channel_index+1} TEDS data: {error_info}")
                     # This might fail for some channels, so just note it
                     pytest.xfail(f"Could not get TEDS data for channel {channel_index+1}")
-                
+
                 # Try to get hardware capabilities
                 try:
                     cap_coupled = self.vv.HardwareSupportsCapacitorCoupled(channel_index)
                     assert cap_coupled is not None
-                    
+
                     accel_power = self.vv.HardwareSupportsAccelPowerSource(channel_index)
                     assert accel_power is not None
-                    
+
                     differential = self.vv.HardwareSupportsDifferential(channel_index)
                     assert differential is not None
-                    
+
                     logger.info(f"Channel {channel_index+1} capabilities: cap_coupled={cap_coupled}, accel_power={accel_power}, differential={differential}")
                 except Exception as e:
                     error_info = ExtractComErrorInfo(e)
                     logger.error(f"Error getting hardware capabilities: {error_info}")
                     pytest.fail(f"Error getting hardware capabilities: {error_info}")
-                    
+
                 # Get additional channel information if available
                 try:
                     # Try to get serial number
                     serial = self.vv.InputSerialNumber(channel_index)
                     assert serial is not None
                     logger.info(f"Channel {channel_index+1} serial: {serial}")
-                    
+
                     # Try to get calibration date
                     cal_date = self.vv.InputCalDate(channel_index)
                     assert cal_date is not None
                     logger.info(f"Channel {channel_index+1} cal date: {cal_date}")
-                    
+
                     # Try to get capacitor coupled status
                     cap_status = self.vv.InputCapacitorCoupled(channel_index)
                     assert cap_status is not None
-                    
+
                     # Try to get power source status
                     power_status = self.vv.InputAccelPowerSource(channel_index)
                     assert power_status is not None
-                    
+
                     # Try to get differential status
                     diff_status = self.vv.InputDifferential(channel_index)
                     assert diff_status is not None
-                    
+
                     # Try to get engineering scale
                     eng_scale = self.vv.InputEngineeringScale(channel_index)
                     assert eng_scale is not None
-                    
+
                     logger.info(f"Channel {channel_index+1} settings: cap={cap_status}, power={power_status}, diff={diff_status}, scale={eng_scale}")
                 except Exception as e:
                     error_info = ExtractComErrorInfo(e)
                     logger.warning(f"Error getting additional channel information: {error_info}")
                     # This might fail for some channels, so just note it
                     pytest.xfail(f"Could not get additional info for channel {channel_index+1}")
-                    
+
         except Exception as e:
             error_info = ExtractComErrorInfo(e)
             logger.error(f"Error in test_channel_info: {error_info}")
             pytest.fail(f"Error in test_channel_info: {error_info}")
-    
+
     @pytest.mark.connection
     def test_open_list_close_test(self):
         """Test OpenTest, ListOpenTests, CloseTest workflow"""
@@ -354,9 +356,9 @@ class TestVibrationVIEW:
     def test_input_mode(self):
         """Test InputMode set method"""
         self.vv.InputMode(0, True, False, False)
-        assert self.vv.InputAccelPowerSource(0) == True
-        assert self.vv.InputCapacitorCoupled(0) == False
-        assert self.vv.InputDifferential(0) == False
+        assert self.vv.InputAccelPowerSource(0)
+        assert not self.vv.InputCapacitorCoupled(0)
+        assert not self.vv.InputDifferential(0)
         logger.info("InputMode set passed")
 
     @pytest.mark.connection
@@ -411,31 +413,31 @@ class TestVibrationVIEW:
             status = self.vv.Status()
             assert status is not None
             logger.info(f"Test status: {status}")
-            
+
             running = self.vv.IsRunning()
             assert running is not None
-            
+
             starting = self.vv.IsStarting()
             assert starting is not None
-            
+
             changing_level = self.vv.IsChangingLevel()
             assert changing_level is not None
-            
+
             hold_level = self.vv.IsHoldLevel()
             assert hold_level is not None
-            
+
             open_loop = self.vv.IsOpenLoop()
             assert open_loop is not None
-            
+
             aborted = self.vv.IsAborted()
             assert aborted is not None
-            
+
             logger.info(f"Test state: running={running}, starting={starting}, changing_level={changing_level}, hold_level={hold_level}, open_loop={open_loop}, aborted={aborted}")
         except Exception as e:
             error_info = ExtractComErrorInfo(e)
             logger.error(f"Error getting test status: {error_info}")
             pytest.fail(f"Error getting test status: {error_info}")
-        
+
         logger.info("Stopping any active test")
         self.vv.StopTest()
 
@@ -446,7 +448,7 @@ class TestVibrationVIEW:
                 # Start test
                 logger.info("Starting test")
                 self.vv.StartTest()
-                
+
                 # Check if starting
                 logger.info("Waiting for test to enter 'starting' state")
                 starting = self.wait_for_condition(self.vv.IsStarting)
@@ -464,7 +466,7 @@ class TestVibrationVIEW:
                 # Stop test
                 logger.info("Stopping test")
                 self.vv.StopTest()
-                
+
                 # Check if stopped
                 logger.info("Waiting for test to stop")
                 running = self.wait_for_not(self.vv.IsRunning)
@@ -477,11 +479,11 @@ class TestVibrationVIEW:
         else:
             logger.warning("Test already running, skipping start/stop test")
             pytest.skip("Test already running, skipping start/stop test")
-        
+
         logger.info("Ensuring test is stopped")
         self.vv.StopTest()
-    
-    
+
+
 if __name__ == "__main__":
     # Configure logging
     logging.basicConfig(
@@ -492,7 +494,7 @@ if __name__ == "__main__":
             logging.StreamHandler(sys.stdout)
         ]
     )
-    
+
     print("="*80)
     print("VibrationVIEW Python Wrapper Test with pytest")
     print("="*80)

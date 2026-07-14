@@ -15,12 +15,13 @@ Usage:
     pytest test_recording.py -v
 """
 
+import logging
 import os
 import sys
 import time
-import logging
+
 import pytest
-from datetime import datetime
+
 from .conftest import requires_vv_live
 
 # Configure logger
@@ -33,7 +34,7 @@ sys.path.append(src_dir)
 
 try:
     # Import main VibrationVIEW API from the package
-    from vibrationviewapi import VibrationVIEW, ExtractComErrorInfo
+    from vibrationviewapi import ExtractComErrorInfo, VibrationVIEW  # noqa: F401
 except ImportError:
     pytest.skip("Could not import VibrationVIEW API. Make sure it's in your Python path.", allow_module_level=True)
 
@@ -44,7 +45,7 @@ except ImportError:
     pytest.skip("Could not import VibrationVIEW command line functions. Make sure they're in your Python path.", allow_module_level=True)
 class TestRecording:
     """Test class for VibrationVIEW recording functionality"""
-    
+
     @pytest.mark.recording
     def test_recording_basic_functions(self):
         """Test basic recording functions (start, pause, stop)"""
@@ -75,9 +76,9 @@ class TestRecording:
             try:
                 self.vv.RecordStop()
                 logger.info("Recorder stopped in finally block")
-            except:
+            except Exception:
                 pass
-    
+
     @pytest.mark.recording
     def test_recording_with_test_running(self):
         """Test recording while a test is running"""
@@ -120,7 +121,7 @@ class TestRecording:
             try:
                 self.vv.RecordStop()
                 logger.info("Recorder stopped in finally block")
-            except:
+            except Exception:
                 pass
 
             # Ensure test is stopped
@@ -128,9 +129,9 @@ class TestRecording:
                 if self.vv.IsRunning():
                     self.vv.StopTest()
                     logger.info("Test stopped after error")
-            except:
+            except Exception:
                 pass
-    
+
     @requires_vv_live
     @pytest.mark.recording
     def test_recording_filename(self):
@@ -192,7 +193,7 @@ if __name__ == "__main__":
             logging.StreamHandler(sys.stdout)
         ]
     )
-    
+
     print("="*80)
     print("VibrationVIEW Recording Tests")
     print("="*80)

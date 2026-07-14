@@ -1,5 +1,6 @@
-from dataclasses import dataclass, field
-from typing import List, Tuple, Dict, Optional
+from dataclasses import dataclass
+from typing import List, Optional, Tuple
+
 
 @dataclass
 class TedsConfig:
@@ -25,7 +26,7 @@ class TedsConfig:
     calibration_initials: str
     calibration_period: str
     measurement_position_id: str
-    
+
     def as_tuples(self) -> List[Tuple[str, str]]:
         """Convert to list of tuples in the format expected by tests"""
         return [

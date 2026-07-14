@@ -14,10 +14,11 @@ Usage:
     pytest sine_tests.py -v
 """
 
+import logging
 import os
 import sys
 import time
-import logging
+
 import pytest
 
 # Configure logger
@@ -34,20 +35,20 @@ sys.path.append(src_dir)
 
 try:
     # Import main VibrationVIEW API
-    from vibrationviewapi import VibrationVIEW, vvTestType, ExtractComErrorInfo
-    
+    from vibrationviewapi import ExtractComErrorInfo, VibrationVIEW, vvTestType  # noqa: F401
+
 except ImportError:
     pytest.skip("Could not import VibrationVIEW API. Make sure they are in the same directory or in your Python path.", allow_module_level=True)
 
 class TestVibrationVIEWSine:
     """Test class for VibrationVIEW Sine functions"""
-    
+
     @pytest.mark.connection
     def test_connection(self):
         """Test connection to VibrationVIEW"""
         assert self.vv is not None
         logger.info("Connection to VibrationVIEW established")
-    
+
     @pytest.mark.sine
     def test_load_sine_test(self):
         """Test loading a sine test file"""
@@ -75,47 +76,47 @@ class TestVibrationVIEWSine:
                     pytest.skip("No sine test available, skipping sine-specific tests")
             else:
                 logger.info("Current test is already SINE, test file loading not needed")
-            
+
             # Verify it's a sine test
             test_type = self.vv.TestType
             assert test_type == vvTestType.TEST_SINE
             logger.info("Confirmed current test is a SINE test")
-            
+
         except Exception as e:
             error_info = ExtractComErrorInfo(e)
             logger.error(f"Error in test_load_sine_test: {error_info}")
             pytest.fail(f"Error in test_load_sine_test: {error_info}")
-    
+
     @pytest.mark.sine
     def test_sine_frequency(self):
         """Test sine frequency getters"""
         # First ensure we have a sine test
         try:
             self.test_load_sine_test()
-            
+
             # Get sine frequency
             freq = self.vv.SineFrequency()
             assert freq is not None
             logger.info(f"SINE frequency: {freq} Hz")
-                
+
         except Exception as e:
             error_info = ExtractComErrorInfo(e)
             logger.error(f"Error in test_sine_frequency: {error_info}")
             pytest.fail(f"Error in test_sine_frequency: {error_info}")
-    
+
     @pytest.mark.sine
     def test_sweep_multiplier(self):
         """Test sweep multiplier getter and setter"""
         # First ensure we have a sine test
         try:
             self.test_load_sine_test()
-            
+
             # Get sweep multiplier
             sweep_mult = self.vv.SweepMultiplier()
             assert sweep_mult is not None
             logger.info(f"Sweep multiplier: {sweep_mult}")
-            
-            # Set sweep multiplier 
+
+            # Set sweep multiplier
             if sweep_mult is not None:
                 new_sweep_mult = sweep_mult * 0.5
                 logger.info(f"Setting sweep multiplier to: {new_sweep_mult}")
@@ -124,47 +125,47 @@ class TestVibrationVIEWSine:
                 assert updated_sweep_mult is not None
                 assert abs(new_sweep_mult - updated_sweep_mult) < 0.0001  # Compare with tolerance
                 logger.info(f"Sweep multiplier successfully set to: {updated_sweep_mult}")
-                
+
                 # Set back to original value
                 logger.info(f"Setting sweep multiplier back to: {sweep_mult}")
                 self.vv.SweepMultiplier(sweep_mult)
                 restored_sweep_mult = self.vv.SweepMultiplier()
                 assert abs(sweep_mult - restored_sweep_mult) < 0.0001  # Compare with tolerance
                 logger.info(f"Sweep multiplier successfully restored to: {restored_sweep_mult}")
-                
+
         except Exception as e:
             error_info = ExtractComErrorInfo(e)
             logger.error(f"Error in test_sweep_multiplier: {error_info}")
             pytest.fail(f"Error in test_sweep_multiplier: {error_info}")
-    
+
     @pytest.mark.sine
     def test_demand_multiplier(self):
         """Test demand multiplier getter and setter"""
         # First ensure we have a sine test
         try:
             self.test_load_sine_test()
-            
+
             # Start test if not running
             if not self.vv.IsRunning():
                 logger.info("Starting test for demand multiplier test")
                 self.vv.StartTest()
-                
+
                 # Wait for test to enter running state
                 running = self.wait_for_condition(self.vv.IsRunning)
                 if not running:
                     logger.warning("Test did not enter running state, skipping demand multiplier test")
                     pytest.skip("Test did not enter running state")
-            
+
             # Get demand multiplier
             demand_mult = self.vv.DemandMultiplier()
             assert demand_mult is not None
             logger.info(f"Demand multiplier: {demand_mult} dB")
 
-            # Set demand multiplier 
+            # Set demand multiplier
             if demand_mult is not None:
                 # Save original value to restore later
                 original_demand_mult = demand_mult
-                
+
                 # Set to test value
                 new_demand_mult = 1.0  # dB
                 logger.info(f"Setting demand multiplier to: {new_demand_mult} dB")
@@ -173,78 +174,78 @@ class TestVibrationVIEWSine:
                 assert updated_demand_mult is not None
                 assert abs(new_demand_mult - updated_demand_mult) < 0.0001  # Compare with tolerance
                 logger.info(f"Demand multiplier successfully set to: {updated_demand_mult} dB")
-                
+
                 # Set back to original value
                 logger.info(f"Setting demand multiplier back to: {original_demand_mult} dB")
                 self.vv.DemandMultiplier(original_demand_mult)
                 restored_demand_mult = self.vv.DemandMultiplier()
                 assert abs(original_demand_mult - restored_demand_mult) < 0.0001  # Compare with tolerance
                 logger.info(f"Demand multiplier successfully restored to: {restored_demand_mult} dB")
-                
+
         except Exception as e:
             error_info = ExtractComErrorInfo(e)
             logger.error(f"Error in test_demand_multiplier: {error_info}")
             pytest.fail(f"Error in test_demand_multiplier: {error_info}")
-    
+
     @pytest.mark.sine
     def test_sweep_commands(self):
         """Test sine sweep commands"""
         # First ensure we have a sine test
         try:
             self.test_load_sine_test()
-            
+
             # Start test if not running
             if not self.vv.IsRunning():
                 logger.info("Starting test for sweep commands test")
                 self.vv.StartTest()
-                
+
                 # Wait for test to enter running state
                 running = self.wait_for_condition(self.vv.IsRunning)
                 if not running:
                     logger.warning("Test did not enter running state, skipping sweep commands test")
                     pytest.skip("Test did not enter running state")
-            
+
             # Test sweep commands
             logger.info("Test is running, testing sweep commands")
-            
+
             logger.info("Testing SweepHold command")
             self.vv.SweepHold()
             time.sleep(1)  # Give time for command to take effect
-            
+
             logger.info("Testing SweepUp command")
             self.vv.SweepUp()
             time.sleep(1)  # Give time for command to take effect
-            
+
             logger.info("Testing SweepDown command")
             self.vv.SweepDown()
             time.sleep(1)  # Give time for command to take effect
-            
+
             logger.info("Testing SweepStepUp command")
             self.vv.SweepStepUp()
             time.sleep(1)  # Give time for command to take effect
-            
+
             logger.info("Testing SweepStepDown command")
             self.vv.SweepStepDown()
             time.sleep(1)  # Give time for command to take effect
-            
+
             logger.info("Testing SweepResonanceHold command")
             self.vv.SweepResonanceHold()
             time.sleep(1)  # Give time for command to take effect
-            
+
             logger.info("All sweep commands executed successfully")
-            
+
         except Exception as e:
             error_info = ExtractComErrorInfo(e)
             logger.error(f"Error in test_sweep_commands: {error_info}")
             pytest.fail(f"Error in test_sweep_commands: {error_info}")
-    
+
     @pytest.mark.sine
     def test_sine_additional_parameters(self):
         """Test additional sine parameters if available"""
         # First ensure we have a sine test
         try:
             self.test_load_sine_test()
-            
+
             # Test various sine parameters if they exist
 
             # Test sweep direction (if available)
@@ -257,7 +258,7 @@ class TestVibrationVIEWSine:
             error_info = ExtractComErrorInfo(e)
             logger.error(f"Error in test_sine_additional_parameters: {error_info}")
             pytest.fail(f"Error in test_sine_additional_parameters: {error_info}")
-    
+
     def teardown_method(self):
         """Clean up after each test method"""
         # If test is running, stop it
@@ -277,7 +278,7 @@ if __name__ == "__main__":
             logging.StreamHandler(sys.stdout)
         ]
     )
-    
+
     print("="*80)
     print("VibrationVIEW Sine Tests")
     print("="*80)

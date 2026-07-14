@@ -1,7 +1,8 @@
-import pytest
-import win32com.client
-import pythoncom
 import winreg
+
+import pytest
+import pythoncom
+import win32com.client
 
 # Skip entire module if VibrationVIEW COM components are not registered
 _VV_REGISTERED = False
@@ -55,7 +56,7 @@ class TestCOMRegistration:
         """Test that ProgIDs are properly registered"""
         exists, value = self.check_registry_key(winreg.HKEY_CLASSES_ROOT, component)
         assert exists, f"ProgID {component} not found in registry"
-        
+
         # Check that ProgID points to correct CLSID
         clsid_exists, clsid_value = self.check_registry_value(
             winreg.HKEY_CLASSES_ROOT, f"{component}\\CLSID", ""
@@ -84,7 +85,7 @@ class TestCOMRegistration:
         clsid_path = f"CLSID\\{clsid}"
         exists, description = self.check_registry_key(winreg.HKEY_CLASSES_ROOT, clsid_path)
         assert exists, f"CLSID {clsid} not found in registry"
-        
+
         # Check InprocServer32 or LocalServer32
         inproc_exists, inproc_path = self.check_registry_value(
             winreg.HKEY_CLASSES_ROOT, f"{clsid_path}\\InprocServer32", ""
@@ -92,9 +93,9 @@ class TestCOMRegistration:
         local_exists, local_path = self.check_registry_value(
             winreg.HKEY_CLASSES_ROOT, f"{clsid_path}\\LocalServer32", ""
         )
-        
+
         assert inproc_exists or local_exists, f"Neither InprocServer32 nor LocalServer32 found for CLSID {clsid}"
-        
+
         # Check the server path that exists
         server_path = inproc_path if inproc_exists else local_path
         # Remove quotes from server path if present
@@ -105,7 +106,7 @@ class TestCOMRegistration:
         """Test that the TypeLib is properly registered"""
         typelib_guid = "{689DBEFA-B0A7-4413-963E-ECB35986DEA4}"
         typelib_path = f"TypeLib\\{typelib_guid}"
-        
+
         exists, _ = self.check_registry_key(winreg.HKEY_CLASSES_ROOT, typelib_path)
         assert exists, f"TypeLib {typelib_guid} not found in registry"
 
@@ -133,11 +134,11 @@ class TestCOMRegistration:
             "{CE4FBD16-5FD1-4A3D-B78C-494D148450C1}",  # ActiveTest
             "{CE4FBD16-5FD1-4A3D-B78C-494D148450C2}",  # ActiveScheduleLevel
         ]
-        
+
         for clsid in components:
             threading_exists, threading_model = self.check_registry_value(
-                winreg.HKEY_CLASSES_ROOT, 
-                f"CLSID\\{clsid}\\InprocServer32", 
+                winreg.HKEY_CLASSES_ROOT,
+                f"CLSID\\{clsid}\\InprocServer32",
                 "ThreadingModel"
             )
             if threading_exists:
@@ -151,7 +152,7 @@ class TestCOMRegistration:
             "{CE4FBD16-5FD1-4A3D-B78C-494D148450C1}",  # ActiveTest
             "{CE4FBD16-5FD1-4A3D-B78C-494D148450C2}",  # ActiveScheduleLevel
         ]
-        
+
         for clsid in automation_clsids:
             programmable_exists, _ = self.check_registry_key(
                 winreg.HKEY_CLASSES_ROOT, f"CLSID\\{clsid}\\Programmable"
@@ -165,7 +166,7 @@ class TestCOMRegistration:
             ("VibrationVIEW.ActiveTest", "{CE4FBD16-5FD1-4A3D-B78C-494D148450C1}"),
             ("VibrationVIEW.ActiveScheduleLevel", "{CE4FBD16-5FD1-4A3D-B78C-494D148450C2}"),
         ]
-        
+
         for progid, clsid in mappings:
             # Check ProgID -> CLSID
             clsid_from_progid_exists, clsid_from_progid = self.check_registry_value(
@@ -173,7 +174,7 @@ class TestCOMRegistration:
             )
             assert clsid_from_progid_exists, f"No CLSID found under ProgID {progid}"
             assert clsid_from_progid == clsid, f"CLSID mismatch for {progid}: {clsid_from_progid} != {clsid}"
-            
+
             # Check CLSID -> ProgID
             progid_from_clsid_exists, progid_from_clsid = self.check_registry_value(
                 winreg.HKEY_CLASSES_ROOT, f"CLSID\\{clsid}\\ProgID", ""

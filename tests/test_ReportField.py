@@ -11,12 +11,11 @@ Prerequisites:
 - pytest library installed (pip install pytest)
 """
 
+import logging
 import os
 import sys
-import time
-import logging
+
 import pytest
-from .conftest import requires_vv
 
 # Configure logger
 logger = logging.getLogger(__name__)
@@ -48,57 +47,57 @@ class TestVibrationVIEWReportField:
         except Exception as e:
             logger.error(f"Error opening test file: {e}")
             pytest.skip(f"Error opening test file: {e}")
-    
-    
+
+
     def test_report_field_invalid(self):
         """Test ReportField method with invalid field name"""
         self._open_test_file()
         try:
             # Try to get a report field with an invalid name
             value = self.vv.ReportField("NonExistentField")
-            
+
             # The method might return a default value or None for invalid fields
             logger.info(f"Report field 'NonExistentField' value: {value}")
-            
+
             # Some implementations might return empty string or None for invalid fields
             # This test checks the behavior rather than asserting specific values
             if value is None or (isinstance(value, str) and value.strip() == ""):
                 logger.info("Invalid field name returns None or empty string as expected")
             else:
                 logger.warning(f"Invalid field name returned unexpected value: {value}")
-            
+
         except Exception as e:
             # Some implementations might throw an exception for invalid fields
             logger.info(f"Invalid field name throws exception as expected: {e}")
-    
-    
+
+
     def test_multiple_report_fields(self):
         """Test retrieving multiple report fields in sequence"""
         self._open_test_file()
         fields_to_test = [
-            "ChName1", 
-            "ChAcp1", 
-            "ChSensitivity1", 
-            "ChCalDue1", 
+            "ChName1",
+            "ChAcp1",
+            "ChSensitivity1",
+            "ChCalDue1",
             "StopCode"
         ]
-        
+
         results = {}
-        
+
         try:
             # Get values for multiple fields
             for field in fields_to_test:
                 value = self.vv.ReportField(field)
                 results[field] = value
                 logger.info(f"Report field '{field}' value: {value}")
-            
+
             # Verify that we got values for all fields
             assert len(results) == len(fields_to_test), f"Got {len(results)} results, expected {len(fields_to_test)}"
-            
+
             # Verify that all fields returned non-None values
             for field, value in results.items():
                 assert value is not None, f"Report field '{field}' returned None"
-            
+
             logger.info("Successfully retrieved multiple report fields")
 
         except Exception as e:
@@ -135,7 +134,7 @@ class TestVibrationVIEWReportField:
                     # ReportFields returns a 2D array with [parameter, value] pairs
                     # Each row should have 2 elements: [field_name, field_value]
                     if len(result) > 0:
-                        logger.info(f"ReportFields structure check:")
+                        logger.info("ReportFields structure check:")
                         for i, row in enumerate(result):
                             if hasattr(row, '__len__'):
                                 assert len(row) == 2, f"Row {i} should have 2 elements [field_name, value], got {len(row)}"
@@ -203,7 +202,7 @@ class TestVibrationVIEWReportField:
                     # ReportFieldsHistory returns a 2D array with [parameter, value1, value2, ...] rows
                     # Each row should have at least 1 element (field_name), plus values from history files
                     if len(result) > 0:
-                        logger.info(f"ReportFieldsHistory structure check:")
+                        logger.info("ReportFieldsHistory structure check:")
                         for i, row in enumerate(result):
                             if hasattr(row, '__len__'):
                                 assert len(row) >= 1, f"Row {i} should have at least 1 element [field_name, ...], got {len(row)}"
@@ -253,7 +252,7 @@ class TestVibrationVIEWReportField:
             field_names = "ChName1,ChAcp1,ChSensitivity1,StopCode,TestType,TestName"
 
             try:
-                logger.info(f"Testing ReportFieldsHistory while test is running (should fail)")
+                logger.info("Testing ReportFieldsHistory while test is running (should fail)")
                 result = self.vv.ReportFieldsHistory(field_names, None)
 
                 # If we get here without exception, the call succeeded when it should have failed
@@ -290,7 +289,7 @@ if __name__ == "__main__":
             logging.StreamHandler(sys.stdout)
         ]
     )
-    
+
     print("="*80)
     print("VibrationVIEW ReportField Tests")
     print("="*80)

@@ -13,15 +13,14 @@ Usage:
     Import this module in test scripts to verify window states
 """
 
-import os
+import logging
 import sys
 import time
-import logging
-import pytest
+
+import psutil
+import win32con
 import win32gui
 import win32process
-import win32con
-import psutil
 
 # Configure logger
 logger = logging.getLogger(__name__)
@@ -29,24 +28,24 @@ logger = logging.getLogger(__name__)
 def find_vibrationview_windows():
     """
     Find all windows associated with a VibrationVIEW process.
-    
+
     Returns:
         list: List of window handles associated with VibrationVIEW processes
     """
     vibrationview_windows = []
-    
+
     def enum_window_callback(hwnd, results):
         """Callback function for EnumWindows"""
         if not win32gui.IsWindowVisible(hwnd):
             return True
-        
+
         # Check if this window belongs to a VibrationVIEW process
         try:
             _, process_id = win32process.GetWindowThreadProcessId(hwnd)
             try:
                 process = psutil.Process(process_id)
                 process_name = process.name().lower()
-                
+
                 # Look for VibrationVIEW processes
                 if "vibrationview" in process_name:
                     # Get window title
@@ -57,23 +56,23 @@ def find_vibrationview_windows():
                 pass
         except Exception as e:
             logger.warning(f"Error checking window process: {e}")
-        
+
         return True
-    
+
     try:
         win32gui.EnumWindows(enum_window_callback, vibrationview_windows)
     except Exception as e:
         logger.error(f"Error enumerating windows: {e}")
-    
+
     return vibrationview_windows
 
 def is_window_minimized(hwnd):
     """
     Check if a window is minimized
-    
+
     Args:
         hwnd: Window handle
-        
+
     Returns:
         bool: True if window is minimized, False otherwise
     """
@@ -86,10 +85,10 @@ def is_window_minimized(hwnd):
 def is_window_maximized(hwnd):
     """
     Check if a window is maximized
-    
+
     Args:
         hwnd: Window handle
-        
+
     Returns:
         bool: True if window is maximized, False otherwise
     """
@@ -103,10 +102,10 @@ def is_window_maximized(hwnd):
 def is_window_normal(hwnd):
     """
     Check if a window is in normal state (not minimized or maximized)
-    
+
     Args:
         hwnd: Window handle
-        
+
     Returns:
         bool: True if window is in normal state, False otherwise
     """
@@ -120,10 +119,10 @@ def is_window_normal(hwnd):
 def get_window_state(hwnd):
     """
     Get the state of a window
-    
+
     Args:
         hwnd: Window handle
-        
+
     Returns:
         str: Window state ("minimized", "maximized", "normal", or "unknown")
     """
@@ -139,50 +138,50 @@ def get_window_state(hwnd):
 def get_vibrationview_window_states():
     """
     Get states of all VibrationVIEW windows
-    
+
     Returns:
         list: List of tuples (title, state) for each VibrationVIEW window
     """
     windows = find_vibrationview_windows()
     results = []
-    
+
     for hwnd, pid, title in windows:
         state = get_window_state(hwnd)
         results.append((title, state, hwnd, pid))
         logger.info(f"VibrationVIEW window '{title}' is in {state} state")
-    
+
     return results
 
 def wait_for_window_state(hwnd, expected_state, timeout=5, interval=0.5):
     """
     Wait for a window to reach an expected state
-    
+
     Args:
         hwnd: Window handle
         expected_state: Expected state ("minimized", "maximized", or "normal")
         timeout: Maximum time to wait (seconds)
         interval: Check interval (seconds)
-        
+
     Returns:
         bool: True if window reached expected state, False if timed out
     """
     start_time = time.time()
-    
+
     while time.time() - start_time < timeout:
         current_state = get_window_state(hwnd)
         if current_state == expected_state:
             return True
         time.sleep(interval)
-    
+
     return False
 
 def maximize_window(hwnd):
     """
     Maximize a window
-    
+
     Args:
         hwnd: Window handle
-        
+
     Returns:
         bool: True if successful, False otherwise
     """
@@ -196,10 +195,10 @@ def maximize_window(hwnd):
 def minimize_window(hwnd):
     """
     Minimize a window
-    
+
     Args:
         hwnd: Window handle
-        
+
     Returns:
         bool: True if successful, False otherwise
     """
@@ -213,10 +212,10 @@ def minimize_window(hwnd):
 def restore_window(hwnd):
     """
     Restore a window to normal state
-    
+
     Args:
         hwnd: Window handle
-        
+
     Returns:
         bool: True if successful, False otherwise
     """
@@ -230,10 +229,10 @@ def restore_window(hwnd):
 def activate_window(hwnd):
     """
     Activate (bring to foreground) a window
-    
+
     Args:
         hwnd: Window handle
-        
+
     Returns:
         bool: True if successful, False otherwise
     """
@@ -241,10 +240,10 @@ def activate_window(hwnd):
         # First make sure the window is not minimized
         if is_window_minimized(hwnd):
             win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
-        
+
         # Set foreground window
         win32gui.SetForegroundWindow(hwnd)
-        
+
         # Check if window is now the foreground window
         foreground_hwnd = win32gui.GetForegroundWindow()
         return foreground_hwnd == hwnd
@@ -261,10 +260,10 @@ if __name__ == "__main__":
             logging.StreamHandler(sys.stdout)
         ]
     )
-    
+
     print("Checking for VibrationVIEW windows...")
     windows = get_vibrationview_window_states()
-    
+
     if not windows:
         print("No VibrationVIEW windows found.")
     else:

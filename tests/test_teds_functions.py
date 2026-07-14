@@ -16,13 +16,13 @@ Usage:
     pytest test_teds_functions.py -v
 """
 
+import logging
 import os
 import sys
 import time
-import logging
+
 import pytest
-import pythoncom
-from datetime import datetime
+
 from .conftest import requires_vv_live
 
 # Configure logger
@@ -60,7 +60,12 @@ except ImportError:
 
 try:
     # Import main VibrationVIEW API
-    from vibrationviewapi import VibrationVIEW, vvVector, vvTestType, ExtractComErrorInfo
+    from vibrationviewapi import (  # noqa: F401
+        ExtractComErrorInfo,
+        VibrationVIEW,
+        vvTestType,
+        vvVector,
+    )
 except ImportError:
     pytest.skip("Could not import VibrationVIEW API. Make sure they are in the same directory or in your Python path.", allow_module_level=True)
 
@@ -269,7 +274,7 @@ class TestTedsFunctions:
             logger.info(f"Built URN string with {num_channels} channels ({channels_with_urns} with URNs): '{test_urn_string}'")
 
             # TedsVerifyStringAndApply accepts a comma-separated URN string
-            logger.info(f"Testing TedsVerifyStringAndApply with URN string")
+            logger.info("Testing TedsVerifyStringAndApply with URN string")
             try:
                 verify_result = self.vv.TedsVerifyStringAndApply(test_urn_string)
             except AttributeError as e:
@@ -345,7 +350,7 @@ class TestTedsFunctions:
             logger.info(f"Built invalid URN string with {num_channels} channels: '{test_urn_string}'")
 
             # TedsVerifyStringAndApply should fail with invalid URN
-            logger.info(f"Testing TedsVerifyStringAndApply with invalid URN string - expecting failure")
+            logger.info("Testing TedsVerifyStringAndApply with invalid URN string - expecting failure")
             try:
                 verify_result = self.vv.TedsVerifyStringAndApply(test_urn_string)
 
@@ -469,7 +474,7 @@ class TestTedsFunctions:
                 # If we get here, cached data was returned
                 assert read_and_apply_result_after is not None, "TedsReadAndApply should return cached configuration data"
                 assert isinstance(read_and_apply_result_after, (tuple, list)), f"TedsReadAndApply should return a tuple/list of URNs, got {type(read_and_apply_result_after)}"
-                assert type(read_and_apply_result_after) == type(read_and_apply_result_before), f"TedsReadAndApply should return same type when test running as when not running"
+                assert type(read_and_apply_result_after) is type(read_and_apply_result_before), "TedsReadAndApply should return same type when test running as when not running"
                 logger.info(f"TedsReadAndApply returned cached URN configuration: {len(read_and_apply_result_after)} URNs")
                 logger.info("Successfully verified that TedsReadAndApply returns cached configuration data when test is running")
 
@@ -489,14 +494,14 @@ class TestTedsFunctions:
             # Re-raise assertion errors (these are test failures)
             try:
                 self.vv.StopTest()
-            except:
+            except Exception:
                 pass
             raise
         except Exception as e:
             # Ensure test is stopped in case of unexpected error
             try:
                 self.vv.StopTest()
-            except:
+            except Exception:
                 pass
             error_info = ExtractComErrorInfo(e)
             logger.error(f"Unexpected error in test_TedsReadAndApply_before_and_during_test: {error_info}")
@@ -556,7 +561,7 @@ class TestTedsFunctions:
                 # If we get here, cached data was returned
                 assert read_result_after is not None, "TedsRead should return cached configuration data"
                 assert isinstance(read_result_after, (tuple, list)), f"TedsRead should return a tuple/list of URNs, got {type(read_result_after)}"
-                assert type(read_result_after) == type(read_result_before), f"TedsRead should return same type when recorder running as when not running"
+                assert type(read_result_after) is type(read_result_before), "TedsRead should return same type when recorder running as when not running"
                 logger.info(f"TedsRead returned cached URN configuration: {len(read_result_after)} URNs")
                 logger.info("Successfully verified that TedsRead returns cached configuration data when recorder is running")
 
@@ -584,7 +589,7 @@ class TestTedsFunctions:
             try:
                 self.vv.RecordStop()
                 logger.info("Recorder stopped in finally block")
-            except:
+            except Exception:
                 pass
 
     @pytest.mark.teds
@@ -1308,7 +1313,7 @@ class TestTedsFunctions:
 
             # Wait for test to no longer be starting (means it's at level)
             not_starting = self.wait_for_not(self.vv.IsStarting, wait_time=10)
-            if not_starting == False:  # not_starting is False when IsStarting becomes False
+            if not not_starting:  # not_starting is False when IsStarting becomes False
                 logger.info("Test is now running at level")
             else:
                 logger.warning("Test may still be starting")
@@ -1365,7 +1370,7 @@ class TestTedsFunctions:
 
             # Wait for test to no longer be starting (means it's at level)
             not_starting = self.wait_for_not(self.vv.IsStarting, wait_time=10)
-            if not_starting == False:  # not_starting is False when IsStarting becomes False
+            if not not_starting:  # not_starting is False when IsStarting becomes False
                 logger.info("Test is now running at level")
             else:
                 logger.warning("Test may still be starting")
@@ -1407,7 +1412,7 @@ class TestTedsFunctions:
                 if self.vv.IsRunning():
                     self.vv.StopTest()
                     logger.info("Test stopped in finally block")
-            except:
+            except Exception:
                 pass
 
 if __name__ == "__main__":
