@@ -10,13 +10,9 @@ __author__ = "Dan VanBaren"
 __email__ = "support@vibrationresearch.com"
 
 # Import main classes and functions to make them available at the package level
-from .vibrationviewapi import VibrationVIEW, vvVector, vvTestType
-from .vibrationviewcommandline import (
-    GenerateReportFromVV,
-    GenerateTXTFromVV,
-    GenerateUFFFromVV
-)
 from .comhelper import ExtractComErrorInfo
+from .vibrationviewapi import VibrationVIEW, vvTestType, vvVector
+from .vibrationviewcommandline import GenerateReportFromVV, GenerateTXTFromVV, GenerateUFFFromVV
 
 # Define what should be available when using "from vibrationviewapi import *"
 __all__ = [

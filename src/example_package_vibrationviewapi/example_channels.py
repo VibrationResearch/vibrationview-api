@@ -16,19 +16,19 @@ for i in range(num_channels):
     label = vv.ChannelLabel(i)
     unit = vv.ChannelUnit(i)
     sensitivity = vv.InputSensitivity(i)
-    
+
     print(f"Channel {channel_num}:")
     print(f"  Label: {label}")
     print(f"  Unit: {unit}")
     print(f"  Sensitivity: {sensitivity}")
-    
+
     # Find the corresponding TEDS data for this channel
     channel_teds = next((item for item in teds_data if item.get("Channel") == channel_num), None)
-    
+
     if channel_teds and "Teds" in channel_teds:
         teds_entries = channel_teds["Teds"]
         print(f"  TEDS data available: {len(teds_entries)} entries")
-        
+
         # List all TEDS entries
         print("  TEDS entries:")
         for key, value in teds_entries:
